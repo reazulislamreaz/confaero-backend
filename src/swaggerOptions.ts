@@ -31,6 +31,7 @@ import { jobSwaggerDocs } from "./app/modules/job/job.swagger";
 import { eventLiveSwaggerDocs } from "./app/modules/eventLive/eventLive.swagger";
 import { appContentSwaggerDocs } from "./app/modules/appContent/appContent.swagger";
 import { verifyEmailSwaggerDocs } from "./app/modules/verifyEmail/verifyEmail.swagger";
+import { exhibitorSwaggerDocs } from "./app/modules/exhibitor/exhibitor.swagger";
 
 export const swaggerOptions = {
   definition: {
@@ -41,6 +42,7 @@ export const swaggerOptions = {
       description: "Express API with auto-generated Swagger docs",
     },
     paths: {
+      ...exhibitorSwaggerDocs,
       ...authSwaggerDocs,
       ...userSwaggerDocs,
       ...superAdminSwaggerDocs,

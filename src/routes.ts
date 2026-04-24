@@ -30,10 +30,12 @@ import jobRoute from "./app/modules/job/job.route";
 import eventLiveRoute from "./app/modules/eventLive/eventLive.route";
 import appContentRoute from "./app/modules/appContent/appContent.route";
 import verifyEmailRoute from "./app/modules/verifyEmail/verifyEmail.route";
+import { ExhibitorRoutes } from "./app/modules/exhibitor/exhibitor.route";
 
 const appRouter = Router();
 
 const moduleRoutes = [
+  { path: "/exhibitor", route: ExhibitorRoutes },
   { path: "/organizer/verify-email", route: verifyEmailRoute },
   { path: "/appContent", route: appContentRoute },
   { path: "/eventLive", route: eventLiveRoute },
