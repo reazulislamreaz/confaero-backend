@@ -14,13 +14,13 @@ booth_router.post(
 );
 
 booth_router.get(
-  "/me",
+  "/me/:eventId",
   auth("EXHIBITOR", "STAFF"),
   booth_controller.get_my_booth,
 );
 
 booth_router.patch(
-  "/me",
+  "/me/:eventId",
   auth("EXHIBITOR", "STAFF"),
   // RequestValidator(booth_validations.update),
   booth_controller.update_my_booth,
@@ -29,11 +29,11 @@ booth_router.patch(
 // add more routes as needed
 
 booth_router.post(
-  "/staff",
+  "/staff/:eventId",
   auth("EXHIBITOR", "STAFF"),
   booth_controller.add_booth_staff_by_email,
 );
 
-booth_router.get("/staff", auth("EXHIBITOR", "STAFF"), booth_controller.get_booth_staff_list);
+booth_router.get("/staff/:eventId", auth("EXHIBITOR", "STAFF"), booth_controller.get_booth_staff_list);
 
 export default booth_router;

@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { connection_model } from "../connection/connection.schema";
 import { Attendance, Lead } from "./qr.schema";
+import { booth_model, booth_staff_model } from "../booth/booth.schema";
 
 export const volunteer_checkin_service = async ({
   attendeeId,
@@ -37,13 +38,30 @@ export const exhibitor_lead_service = async ({
   exhibitorId,
   attendeeId,
   eventId,
+  scannedBy,
 }: {
-  exhibitorId: string;
+  exhibitorId: string | null;
   attendeeId: string;
   eventId: string;
+  scannedBy: string;
 }) => {
+  let finalExhibitorId = exhibitorId;
+
+  // If exhibitorId is null, it means it was scanned by a STAFF member
+  if (!finalExhibitorId) {
+    const staffMapping = await booth_staff_model
+      .findOne({ userId: scannedBy })
+      .populate("boothId");
+
+    if (!staffMapping || !staffMapping.boothId) {
+      throw new Error("Staff member is not assigned to any booth");
+    }
+
+    finalExhibitorId = (staffMapping.boothId as any).exhibitorId.toString();
+  }
+
   const exists = await Lead.findOne({
-    exhibitorId,
+    exhibitorId: finalExhibitorId,
     attendeeId,
     eventId,
   });
@@ -56,9 +74,10 @@ export const exhibitor_lead_service = async ({
   }
 
   const lead = await Lead.create({
-    exhibitorId,
+    exhibitorId: finalExhibitorId,
     attendeeId,
     eventId,
+    scannedBy,
     createdAt: new Date(),
   });
 

@@ -42,16 +42,17 @@ type ScanResult =
       exhibitorId: string;
       attendeeId: string;
       eventId: string;
+      scannedBy: string;
     };
 
-export const scan_qr_token = (
+export const scan_qr_token = async (
   qrToken: string,
   scanner?: {
     id: string;
     activeRole: "ATTENDEE" | "VOLUNTEER" | "EXHIBITOR" | "STAFF";
     eventId: string;
   },
-): ScanResult | any => {
+): Promise<ScanResult | any> => {
   const payload = verifyQrToken(qrToken);
 
   if (!payload) {
@@ -65,7 +66,6 @@ export const scan_qr_token = (
 
   // same event check (VERY IMPORTANT)
 
-  console.log(scanner.eventId, payload.eventId);
   if (scanner.eventId !== payload.eventId) {
     throw new Error("QR code is not from this event");
   }
@@ -97,7 +97,22 @@ export const scan_qr_token = (
         exhibitorId: scanner.id,
         attendeeId: payload.userId,
         eventId: payload.eventId,
+        scannedBy: scanner.id,
       };
+
+    case "STAFF": {
+      // For staff, we need to find which exhibitor they belong to
+      // We'll import these models inside to avoid circular dependencies if any, 
+      // but better to handle it in the service layer or utility.
+      // For now, let's return the scannedBy and let the utility handle the exhibitor resolution or do it here.
+      return {
+        action: "LEAD",
+        exhibitorId: null, // To be resolved in the utility or next step
+        attendeeId: payload.userId,
+        eventId: payload.eventId,
+        scannedBy: scanner.id,
+      };
+    }
 
     default:
       throw new Error("This role cannot scan attendee QR");

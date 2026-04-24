@@ -6,7 +6,7 @@ import {
   create_instant_connection_from_scan,
   exhibitor_lead_service,
   volunteer_checkin_service,
-} from "./utilites";
+} from "./utilities";
 import { get_volunteer_checkin_history_service } from "./volunteer.service";
 import {
   get_exhibitor_leads_service,
@@ -38,7 +38,7 @@ export const scan_qr_controller = catchAsync(async (req, res) => {
   const scanner = req.user; // from auth middleware
   const { eventId } = req.params;
 
-  const result = scan_qr_token(qrToken, { ...scanner, eventId } as any);
+  const result = await scan_qr_token(qrToken, { ...scanner, eventId } as any);
 
   let data: any;
 

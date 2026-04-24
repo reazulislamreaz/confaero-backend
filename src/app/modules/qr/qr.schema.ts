@@ -55,6 +55,12 @@ const leadSchema = new Schema(
       required: true,
     },
 
+    scannedBy: {
+      type: Types.ObjectId,
+      ref: "account",
+      required: true,
+    },
+
     source: {
       type: String,
       enum: ["QR_SCAN"],
@@ -63,8 +69,8 @@ const leadSchema = new Schema(
     // 🔹 UI SUPPORT
     tags: {
       type: [String],
-      enum: ["HOT", "FOLLOW_UP", "GENERAL"],
-      default: ["GENERAL"],
+      enum: ["hot", "follow-up", "general"],
+      default: ["general"],
     },
 
     note: {

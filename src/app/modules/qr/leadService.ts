@@ -1,8 +1,6 @@
-import { ObjectId } from "mongodb";
 import { UserProfile_Model } from "../user/user.schema";
 import { Lead } from "./qr.schema";
-
-
+import { Types } from "mongoose";
 
 export const get_exhibitor_leads_service = async ({
   eventId,
@@ -10,53 +8,71 @@ export const get_exhibitor_leads_service = async ({
   filter = "all",
   search = "",
 }: {
-  eventId: any;
-  exhibitorId: any;
+  eventId: string;
+  exhibitorId: string;
   filter?: "all" | "hot" | "followup";
   search?: string;
 }) => {
-  const query: any = {
-    eventId,
-    exhibitorId,
+  const matchQuery: any = {
+    eventId: new Types.ObjectId(eventId),
+    exhibitorId: new Types.ObjectId(exhibitorId),
   };
 
   const normalizedFilter = filter.toLowerCase();
-
   if (normalizedFilter === "hot") {
-    query.tags = { $in: ["hot"] };
+    matchQuery.tags = { $in: ["hot"] };
+  } else if (normalizedFilter === "followup") {
+    matchQuery.tags = { $in: ["follow-up"] };
   }
 
-  if (normalizedFilter === "followup") {
-    query.tags = { $in: ["follow-up"] };
+  const aggregation: any[] = [
+    { $match: matchQuery },
+    {
+      $lookup: {
+        from: "accounts",
+        localField: "attendeeId",
+        foreignField: "_id",
+        as: "account",
+      },
+    },
+    { $unwind: "$account" },
+    {
+      $lookup: {
+        from: "user_profiles",
+        localField: "attendeeId",
+        foreignField: "accountId",
+        as: "profile",
+      },
+    },
+    { $unwind: { path: "$profile", preserveNullAndEmptyArrays: true } },
+  ];
+
+  // Apply search filter if provided
+  if (search.trim()) {
+    const searchRegex = new RegExp(search.trim(), "i");
+    aggregation.push({
+      $match: {
+        $or: [
+          { "account.email": searchRegex },
+          { "profile.name": searchRegex },
+          { "profile.affiliations.company": searchRegex },
+        ],
+      },
+    });
   }
-  const leads = await Lead.find(query)
-    .sort({ createdAt: -1 })
-    .populate("attendeeId", "email");
 
-  // 1️⃣ collect all attendeeIds
-  const attendeeIds = leads.map((lead: any) => lead.attendeeId?._id);
+  aggregation.push({ $sort: { createdAt: -1 } });
 
-  // 2️⃣ fetch all related profiles at once
-  const userProfiles = await UserProfile_Model.find({
-    accountId: { $in: attendeeIds },
-  });
+  const leads = await Lead.aggregate(aggregation);
 
-  // 3️⃣ create map for fast lookup
-  const profileMap = new Map(
-    userProfiles.map((profile: any) => [profile.accountId.toString(), profile]),
-  );
-
-  // 4️⃣ build formatted list
   const formattedLeads = leads.map((lead: any) => {
-    const profile = profileMap.get(lead.attendeeId._id.toString());
-    const affiliation = profile?.affiliations?.[0];
-
+    const affiliation = lead.profile?.affiliations?.[0];
     return {
       leadId: lead._id,
-      attendeeId: lead.attendeeId._id,
-      email: lead.attendeeId.email,
-      name: profile?.name || "Unknown",
-      avatar: profile?.avatar || null,
+      attendeeId: lead.attendeeId,
+      email: lead.account.email,
+      name: lead.profile?.name || "Unknown",
+      avatar: lead.profile?.avatar || null,
       designation: affiliation?.position || "Unknown",
       company: affiliation?.company || "Unknown",
       tags: lead.tags,
@@ -65,23 +81,12 @@ export const get_exhibitor_leads_service = async ({
     };
   });
 
-  // 🔍 SEARCH (name, email, company)
-  const normalizedSearch = search.trim().toLowerCase();
-
-  const filteredLeads = normalizedSearch
-    ? formattedLeads.filter((lead) =>
-        [lead.name, lead.email, lead.company]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearch),
-      )
-    : formattedLeads;
-
   return {
-    total: filteredLeads.length,
-    leads: filteredLeads,
+    total: formattedLeads.length,
+    leads: formattedLeads,
   };
 };
+
 export const update_lead_note_service = async ({
   leadId,
   exhibitorId,
@@ -108,6 +113,7 @@ export const update_lead_note_service = async ({
     note: lead.note,
   };
 };
+
 export const update_lead_tags_service = async ({
   leadId,
   exhibitorId,
@@ -117,9 +123,12 @@ export const update_lead_tags_service = async ({
   exhibitorId: any;
   tags: string[];
 }) => {
+  // Normalize tags to lowercase
+  const normalizedTags = tags.map(t => t.toLowerCase());
+
   const lead = await Lead.findOneAndUpdate(
     { _id: leadId, exhibitorId },
-    { tags },
+    { tags: normalizedTags },
     { new: true },
   );
 
