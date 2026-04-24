@@ -43,13 +43,10 @@ export const swaggerOptions = {
     paths: {
       ...authSwaggerDocs,
       ...userSwaggerDocs,
-
       ...superAdminSwaggerDocs,
-
       ...organizerSwaggerDocs,
       ...organizerSessionSwaggerDocs,
       ...attendeeSwaggerDocs,
-
       ...qrSwaggerDocs,
       ...invitationSwaggerDocs,
       ...noteSwaggerDocs,
@@ -63,7 +60,6 @@ export const swaggerOptions = {
       ...posterSwaggerDocs,
       ...reviewerSwaggerDocs,
       ...posterAssignSwaggerDocs,
-
       ...boothSwaggerDocs,
       ...organizerBoothSwaggerDocs,
       ...sponsorSwaggerDocs,
@@ -74,18 +70,17 @@ export const swaggerOptions = {
       ...reportSwaggerDocs,
       ...jobSwaggerDocs,
       ...appContentSwaggerDocs,
-
       ...verifyEmailSwaggerDocs,
     },
     servers:
       configs.env === "production"
         ? [
-            { url: "http://10.10.11.30:8080" },
+            { url: "http://10.10.11.30:8081" },
             { url: "https://reazul8078.suplify.life" },
           ]
         : [
             { url: "https://reazul8078.suplify.life" },
-            { url: "http://10.10.11.30:8080" },
+            { url: "http://10.10.11.30:8081" },
           ],
     components: {
       securitySchemes: {
@@ -93,7 +88,7 @@ export const swaggerOptions = {
           type: "apiKey",
           in: "header",
           name: "Authorization",
-          description: "Put your accessToken here ",
+          description: "Put your accessToken here",
         },
       },
     },
