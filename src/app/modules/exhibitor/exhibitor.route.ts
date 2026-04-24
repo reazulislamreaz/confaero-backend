@@ -6,7 +6,7 @@ const router = Router();
 
 router.get(
   "/performance/:eventId",
-  auth("EXHIBITOR"),
+  auth("EXHIBITOR", "STAFF"),
   ExhibitorController.get_exhibitor_performance,
 );
 

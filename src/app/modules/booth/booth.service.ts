@@ -36,12 +36,10 @@ const get_my_booth_from_db = async (userId: string, eventId: string) => {
   }
 
   // 2️⃣ Try as Staff
-  const staff = await booth_staff_model
-    .findOne({ userId })
-    .populate({
-      path: "boothId",
-      match: { eventId }
-    });
+  const staff = await booth_staff_model.findOne({ userId }).populate({
+    path: "boothId",
+    match: { eventId },
+  });
 
   if (!staff || !staff.boothId) {
     throw new AppError("Booth not found for this event", httpStatus.NOT_FOUND);
@@ -56,11 +54,9 @@ const update_my_booth_into_db = async (
   payload: Record<string, any>,
 ) => {
   // Ensure we update the booth for the specific event
-  const booth = await booth_model.findOneAndUpdate(
-    { exhibitorId, eventId },
-    payload,
-    { new: true },
-  );
+  const booth = await booth_model.findOneAndUpdate({ eventId }, payload, {
+    new: true,
+  });
 
   if (!booth) {
     throw new AppError("Booth not found", httpStatus.NOT_FOUND);
@@ -86,7 +82,7 @@ const add_staff_by_email_into_db = async (
     throw new AppError("User not registered", httpStatus.NOT_FOUND);
   }
 
-  // Allow most roles except ORGANIZER/SUPER_ADMIN perhaps, 
+  // Allow most roles except ORGANIZER/SUPER_ADMIN perhaps,
   // but definitely more than just ATTENDEE.
   const restrictedRoles = ["ORGANIZER", "SUPER_ADMIN"];
   if (user.activeRole && restrictedRoles.includes(user.activeRole)) {
@@ -115,19 +111,24 @@ const add_staff_by_email_into_db = async (
   return staff;
 };
 
-const get_booth_staff_list_from_db = async (exhibitorId: string, eventId: string) => {
+const get_booth_staff_list_from_db = async (
+  exhibitorId: string,
+  eventId: string,
+) => {
   const objectUserId = new Types.ObjectId(exhibitorId);
 
   let booth = await booth_model.findOne({
     exhibitorId: objectUserId,
-    eventId
+    eventId,
   });
 
   if (!booth) {
-    const staff = await booth_staff_model.findOne({ userId: objectUserId }).populate({
-      path: "boothId",
-      match: { eventId }
-    });
+    const staff = await booth_staff_model
+      .findOne({ userId: objectUserId })
+      .populate({
+        path: "boothId",
+        match: { eventId },
+      });
 
     if (!staff || !staff.boothId) {
       throw new AppError("Booth not found for this user", httpStatus.NOT_FOUND);

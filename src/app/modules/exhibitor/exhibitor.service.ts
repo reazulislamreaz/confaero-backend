@@ -14,7 +14,7 @@ export const get_exhibitor_performance_service = async ({
   limit?: number;
 }) => {
   const matchQuery = {
-    exhibitorId: new Types.ObjectId(exhibitorId),
+    // exhibitorId: new Types.ObjectId(exhibitorId),
     eventId: new Types.ObjectId(eventId),
   };
 
@@ -52,7 +52,7 @@ export const get_exhibitor_performance_service = async ({
     .lean();
 
   const attendeeIds = recentLeadsRaw.map((lead) => lead.attendeeId);
-  
+
   const profiles = await UserProfile_Model.find({
     accountId: { $in: attendeeIds },
   }).lean();
@@ -65,7 +65,7 @@ export const get_exhibitor_performance_service = async ({
   const recentLeads = recentLeadsRaw.map((lead: any) => {
     const profile = profilesMap[lead.attendeeId.toString()];
     const affiliation = profile?.affiliations?.[0];
-    
+
     return {
       id: lead._id,
       name: profile?.name || "Unknown",
