@@ -138,4 +138,39 @@ export const boothSwaggerDocs = {
       },
     },
   },
+
+  "/api/v1/booth/analytics/{eventId}": {
+    get: {
+      tags: ["Booth"],
+      summary: "Get booth analytics",
+      description: "Get total leads and total staff for the booth.",
+      security: [{ AuthorizationToken: [] }],
+      parameters: [
+        {
+          name: "eventId",
+          in: "path",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Analytics retrieved successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  totalLeads: { type: "number" },
+                  totalStaff: { type: "number" },
+                },
+              },
+            },
+          },
+        },
+        401: { description: "Unauthorized" },
+        404: { description: "Booth not found" },
+      },
+    },
+  },
 };

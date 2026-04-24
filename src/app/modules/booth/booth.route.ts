@@ -36,4 +36,10 @@ booth_router.post(
 
 booth_router.get("/staff/:eventId", auth("EXHIBITOR", "STAFF"), booth_controller.get_booth_staff_list);
 
+booth_router.get(
+  "/analytics/:eventId",
+  auth("EXHIBITOR", "STAFF"),
+  booth_controller.get_booth_analytics,
+);
+
 export default booth_router;

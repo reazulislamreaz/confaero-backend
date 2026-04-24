@@ -99,7 +99,7 @@ const get_exhibitor_leads = catchAsync(async (req, res) => {
   const { filter = "all", search = "" } = req.query;
 
   const data = await get_exhibitor_leads_service({
-    eventId,
+    eventId: eventId as string,
     exhibitorId,
     filter: filter as any,
     search: search as string,

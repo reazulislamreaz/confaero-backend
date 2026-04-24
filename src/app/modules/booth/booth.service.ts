@@ -5,6 +5,7 @@ import { AppError } from "../../utils/app_error";
 import { Account_Model } from "../auth/auth.schema";
 import { UserProfile_Model } from "../user/user.schema";
 import { Types } from "mongoose";
+import { Lead } from "../qr/qr.schema";
 
 const create_new_booth_into_db = async (payload: T_Booth): Promise<T_Booth> => {
   const isBoothExist = await booth_model.findOne({
@@ -88,7 +89,7 @@ const add_staff_by_email_into_db = async (
   // Allow most roles except ORGANIZER/SUPER_ADMIN perhaps, 
   // but definitely more than just ATTENDEE.
   const restrictedRoles = ["ORGANIZER", "SUPER_ADMIN"];
-  if (restrictedRoles.includes(user.activeRole)) {
+  if (user.activeRole && restrictedRoles.includes(user.activeRole)) {
     throw new AppError(
       `Users with role ${user.activeRole} cannot be added as booth staff`,
       httpStatus.BAD_REQUEST,
@@ -166,10 +167,30 @@ const get_booth_staff_list_from_db = async (exhibitorId: string, eventId: string
   });
 };
 
+const get_booth_analytics_from_db = async (userId: string, eventId: string) => {
+  const booth = await get_my_booth_from_db(userId, eventId);
+
+  const [totalLeads, totalStaff] = await Promise.all([
+    Lead.countDocuments({
+      exhibitorId: (booth as any).exhibitorId,
+      eventId: new Types.ObjectId(eventId),
+    }),
+    booth_staff_model.countDocuments({
+      boothId: booth._id,
+    }),
+  ]);
+
+  return {
+    totalLeads,
+    totalStaff,
+  };
+};
+
 export const booth_service = {
   get_my_booth_from_db,
   update_my_booth_into_db,
   create_new_booth_into_db,
   add_staff_by_email_into_db,
   get_booth_staff_list_from_db,
+  get_booth_analytics_from_db,
 };

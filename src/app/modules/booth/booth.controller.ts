@@ -23,7 +23,10 @@ const create_new_booth = catchAsync(async (req, res) => {
 
 const get_my_booth = catchAsync(async (req, res) => {
   const { eventId } = req.params;
-  const result = await booth_service.get_my_booth_from_db(req.user?.id, eventId);
+  const result = await booth_service.get_my_booth_from_db(
+    req.user?.id,
+    eventId as string,
+  );
 
   manageResponse(res, {
     statusCode: httpStatus.OK,
@@ -37,7 +40,7 @@ const update_my_booth = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.update_my_booth_into_db(
     req.user?.id,
-    eventId,
+    eventId as string,
     req.body,
   );
 
@@ -53,7 +56,7 @@ const add_booth_staff_by_email = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.add_staff_by_email_into_db(
     req.user?.id,
-    eventId,
+    eventId as string,
     req.body.email,
   );
 
@@ -69,7 +72,7 @@ const get_booth_staff_list = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.get_booth_staff_list_from_db(
     req.user?.id,
-    eventId,
+    eventId as string,
   );
 
   manageResponse(res, {
@@ -80,10 +83,26 @@ const get_booth_staff_list = catchAsync(async (req, res) => {
   });
 });
 
+const get_booth_analytics = catchAsync(async (req, res) => {
+  const { eventId } = req.params;
+  const result = await booth_service.get_booth_analytics_from_db(
+    req.user?.id,
+    eventId as string,
+  );
+
+  manageResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Booth analytics fetched successfully",
+    data: result,
+  });
+});
+
 export const booth_controller = {
   create_new_booth,
   get_my_booth,
   update_my_booth,
   add_booth_staff_by_email,
   get_booth_staff_list,
+  get_booth_analytics,
 };
