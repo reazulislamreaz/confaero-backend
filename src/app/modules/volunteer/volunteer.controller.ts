@@ -36,7 +36,8 @@ const get_task_details = catchAsync(async (req, res) => {
   });
 });
 const my_tasks = catchAsync(async (req, res) => {
-  const result = await task_service.get_my_tasks(req.user?.id);
+  const { filter } = req.query;
+  const result = await task_service.get_my_tasks(req.user?.id, filter as string);
 
   manageResponse(res, {
     statusCode: httpStatus.OK,

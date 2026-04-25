@@ -11,7 +11,8 @@ const create_task_and_assign = async (payload: any, creatorId: string) => {
     eventId,
     volunteerEmail,
     title,
-    date,
+    startDate,
+    endDate,
     time,
     location,
     instruction,
@@ -47,7 +48,8 @@ const create_task_and_assign = async (payload: any, creatorId: string) => {
   return await task_model.create({
     eventId,
     title,
-    date,
+    startDate,
+    endDate,
     time,
     location,
     instruction,
@@ -89,7 +91,8 @@ const get_task_details_by_id = async (
   return {
     taskId: task._id,
     title: task.title,
-    date: task.date,
+    startDate: task.startDate,
+    endDate: task.endDate,
     time: task.time,
     location: task.location,
     instruction: task.instruction,
@@ -112,9 +115,17 @@ const get_task_details_by_id = async (
   };
 };
 
-const get_my_tasks = async (volunteerId: any) => {
+const get_my_tasks = async (volunteerId: any, filterType?: string) => {
+  const query: any = { assignedVolunteer: volunteerId };
+  
+  if (filterType === "current") {
+    query.status = { $in: ["PENDING", "IN_PROGRESS"] };
+  } else if (filterType === "history") {
+    query.status = { $in: ["COMPLETED", "DUE"] };
+  }
+
   const tasks = await task_model
-    .find({ assignedVolunteer: volunteerId })
+    .find(query)
     .populate("createdBy", "email activeRole name")
     .sort({ createdAt: -1 });
   return tasks;
@@ -140,7 +151,8 @@ const get_today_progress = async (volunteerId: any) => {
 
   const tasks = await task_model.find({
     assignedVolunteer: new Object(volunteerId),
-    date: today,
+    startDate: { $lte: today },
+    endDate: { $gte: today },
   });
 
   const totalTasks = tasks.length;
@@ -308,7 +320,8 @@ const get_single_report = async (reportId: any) => {
           taskId: task._id,
           title: task.title,
           location: task.location,
-          date: task.date,
+          startDate: task.startDate,
+          endDate: task.endDate,
           time: task.time,
         }
       : null,

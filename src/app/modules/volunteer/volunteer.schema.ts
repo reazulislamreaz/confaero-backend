@@ -5,7 +5,8 @@ const taskSchema = new Schema<T_Task>(
   {
     eventId: { type: Schema.Types.ObjectId, ref: "event", required: true },
     title: String,
-    date: String,
+    startDate: String,
+    endDate: String,
     time: String,
     location: String,
     instruction: String,
@@ -19,8 +20,8 @@ const taskSchema = new Schema<T_Task>(
 
     status: {
       type: String,
-      enum: ["ASSIGNED", "COMPLETED", "REPORTED"],
-      default: "ASSIGNED",
+      enum: ["PENDING", "IN_PROGRESS", "COMPLETED", "DUE", "REPORTED"],
+      default: "PENDING",
     },
 
     createdBy: {
