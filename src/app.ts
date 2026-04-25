@@ -20,12 +20,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // middleware
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://206.162.244.11:3060",
-      "http://206.162.244.11:3061",
-    ],
+    origin: true, // allows all origins dynamically
     credentials: true,
   }),
 );
