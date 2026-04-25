@@ -122,17 +122,14 @@ const get_all_register_from_db = async (
   const skip = (page - 1) * limit;
   const roleFilter = query.role;
   const search = query.search?.trim();
-  console.log(user);
-  const isSuperAdmin = user.activeRole === "SUPER_ADMIN"; // তোমার role value অনুযায়ী adjust করো
+
+  const isSuperAdmin = user.activeRole === "SUPER_ADMIN";
 
   const eventQuery = isSuperAdmin
     ? { _id: eventId }
     : { _id: eventId, organizerEmails: user.email };
-  const events = await Event_Model.find(eventQuery).select("_id participants");
 
-  // const events = await Event_Model.find({
-  //   organizerEmails: user.email,
-  // }).select("_id participants");
+  const events = await Event_Model.find(eventQuery).select("_id participants");
 
   if (!events.length) {
     return { data: [], meta: { page, limit, total: 0 } };
@@ -154,15 +151,14 @@ const get_all_register_from_db = async (
     return { data: [], meta: { page, limit, total: 0 } };
   }
 
-  const accountIds = participants.map((p) => p.accountId);
+  const accountIds = participants
+    .map((p) => p.accountId)
+    .filter(Boolean); // ✅ fix
 
   const accounts = await Account_Model.find({
     _id: { $in: accountIds },
   }).select("email");
 
-  // const users = await User_Model.find({
-  //   accountId: { $in: accountIds },
-  // }).select("name accountId");
   const users = await UserProfile_Model.find({
     accountId: { $in: accountIds },
   }).select("name accountId");
@@ -171,31 +167,44 @@ const get_all_register_from_db = async (
     accountId: { $in: accountIds },
   }).select("location accountId");
 
-  const accountMap = new Map(accounts.map((a: any) => [a._id.toString(), a]));
-
-  const userMap = new Map(users.map((u: any) => [u.accountId.toString(), u]));
-
-  const profileMap = new Map(
-    profiles.map((p: any) => [p.accountId.toString(), p]),
+  const accountMap = new Map(
+    accounts
+      .filter((a: any) => a._id)
+      .map((a: any) => [a._id.toString(), a]),
   );
 
-  let rows = participants.map((p) => {
-    const accId = p.accountId.toString();
+  const userMap = new Map(
+    users
+      .filter((u: any) => u.accountId)
+      .map((u: any) => [u.accountId.toString(), u]),
+  );
 
-    return {
-      accountId: accId,
-      name: userMap.get(accId)?.name || null,
-      email: accountMap.get(accId)?.email || null,
-      address: profileMap.get(accId)?.location || null,
-      role: p.role,
-      eventId: p.eventId,
-    };
-  });
+  const profileMap = new Map(
+    profiles
+      .filter((p: any) => p.accountId)
+      .map((p: any) => [p.accountId.toString(), p]),
+  );
+
+  let rows = participants
+    .map((p) => {
+      const accId = p.accountId?.toString(); // ✅ fix
+      if (!accId) return null; // ✅ fix
+
+      return {
+        accountId: accId,
+        name: userMap.get(accId)?.name || null,
+        email: accountMap.get(accId)?.email || null,
+        address: profileMap.get(accId)?.location || null,
+        role: p.role,
+        eventId: p.eventId,
+      };
+    })
+    .filter(Boolean); // ✅ fix
 
   if (search) {
     const regex = new RegExp(search, "i");
     rows = rows.filter(
-      (r) => regex.test(r.name || "") || regex.test(r.email || ""),
+      (r: any) => regex.test(r.name || "") || regex.test(r.email || ""),
     );
   }
 
@@ -212,6 +221,115 @@ const get_all_register_from_db = async (
     },
   };
 };
+// const get_all_register_from_db = async (
+//   user: any,
+//   query: {
+//     page?: number;
+//     limit?: number;
+//     role?: string;
+//     search?: string;
+//   },
+//   eventId: any,
+// ) => {
+//   if (!user?.email) {
+//     throw new AppError("Unauthorized", httpStatus.UNAUTHORIZED);
+//   }
+
+//   const page = Number(query.page) || 1;
+//   const limit = Number(query.limit) || 10;
+//   const skip = (page - 1) * limit;
+//   const roleFilter = query.role;
+//   const search = query.search?.trim();
+//   console.log(user);
+//   const isSuperAdmin = user.activeRole === "SUPER_ADMIN"; // তোমার role value অনুযায়ী adjust করো
+
+//   const eventQuery = isSuperAdmin
+//     ? { _id: eventId }
+//     : { _id: eventId, organizerEmails: user.email };
+//   const events = await Event_Model.find(eventQuery).select("_id participants");
+
+//   // const events = await Event_Model.find({
+//   //   organizerEmails: user.email,
+//   // }).select("_id participants");
+
+//   if (!events.length) {
+//     return { data: [], meta: { page, limit, total: 0 } };
+//   }
+
+//   let participants = events.flatMap((event: any) =>
+//     event.participants.map((p: any) => ({
+//       eventId: event._id,
+//       accountId: p.accountId,
+//       role: p.role,
+//     })),
+//   );
+
+//   if (roleFilter) {
+//     participants = participants.filter((p) => p.role == roleFilter);
+//   }
+
+//   if (!participants.length) {
+//     return { data: [], meta: { page, limit, total: 0 } };
+//   }
+
+//   const accountIds = participants.map((p) => p.accountId);
+
+//   const accounts = await Account_Model.find({
+//     _id: { $in: accountIds },
+//   }).select("email");
+
+//   // const users = await User_Model.find({
+//   //   accountId: { $in: accountIds },
+//   // }).select("name accountId");
+//   const users = await UserProfile_Model.find({
+//     accountId: { $in: accountIds },
+//   }).select("name accountId");
+
+//   const profiles = await UserProfile_Model.find({
+//     accountId: { $in: accountIds },
+//   }).select("location accountId");
+
+//   const accountMap = new Map(accounts.map((a: any) => [a._id.toString(), a]));
+
+//   const userMap = new Map(users.map((u: any) => [u.accountId.toString(), u]));
+
+//   const profileMap = new Map(
+//     profiles.map((p: any) => [p.accountId.toString(), p]),
+//   );
+
+//   let rows = participants.map((p) => {
+//     const accId = p.accountId.toString();
+
+//     return {
+//       accountId: accId,
+//       name: userMap.get(accId)?.name || null,
+//       email: accountMap.get(accId)?.email || null,
+//       address: profileMap.get(accId)?.location || null,
+//       role: p.role,
+//       eventId: p.eventId,
+//     };
+//   });
+
+//   if (search) {
+//     const regex = new RegExp(search, "i");
+//     rows = rows.filter(
+//       (r) => regex.test(r.name || "") || regex.test(r.email || ""),
+//     );
+//   }
+
+//   const total = rows.length;
+//   const paginated = rows.slice(skip, skip + limit);
+
+//   return {
+//     data: paginated,
+//     meta: {
+//       page,
+//       limit,
+//       total,
+//       totalPages: Math.ceil(total / limit),
+//     },
+//   };
+// };
 
 // delete
 const remove_attendee_from_event = async (
