@@ -561,9 +561,10 @@ const delete_user_from_db = async (userId: string) => {
   }
 };
 
+
 const get_event_overview_from_db = async (eventId: any) => {
   const event = await Event_Model.findById(eventId)
-    .select("title location startDate endDate expectedAttendee")
+    .select("title location startDate endDate expectedAttendee participants") // ✅ participants added
     .lean();
 
   if (!event) {
@@ -571,7 +572,6 @@ const get_event_overview_from_db = async (eventId: any) => {
   }
 
   const [
-    totalRegistrations,
     checkedInAttendees,
     exhibitors,
     pendingRequests,
@@ -579,7 +579,6 @@ const get_event_overview_from_db = async (eventId: any) => {
     recentRegs,
     topPartnersRaw,
   ] = await Promise.all([
-    attendee_model.countDocuments({ event: eventId }),
     Attendance.countDocuments({ eventId }),
     invitation_model.countDocuments({
       eventId,
@@ -612,8 +611,12 @@ const get_event_overview_from_db = async (eventId: any) => {
       .lean(),
   ]);
 
+  // ✅ FIXED: total registrations from participants
+  const totalRegistrations = event.participants?.length || 0;
+
   // Map user profiles for recent registrations
-  const accountIds = recentRegs.map((r: any) => r.account?._id);
+  const accountIds = recentRegs.map((r: any) => r.account?._id).filter(Boolean);
+
   const profiles = await UserProfile_Model.find({
     accountId: { $in: accountIds },
   })
@@ -624,14 +627,18 @@ const get_event_overview_from_db = async (eventId: any) => {
     profiles.map((p: any) => [p.accountId.toString(), p]),
   );
 
-  const recentRegistrations = recentRegs.map((r: any) => ({
-    id: r._id,
-    name: profileMap.get(r.account?._id.toString())?.name || "Anonymous",
-    email: r.account?.email || "N/A",
-    avatar: profileMap.get(r.account?._id.toString())?.avatar || "",
-    role: "Attendee", // Default
-    createdAt: r.createdAt,
-  }));
+  const recentRegistrations = recentRegs.map((r: any) => {
+    const accId = r.account?._id?.toString();
+
+    return {
+      id: r._id,
+      name: accId ? profileMap.get(accId)?.name || "Anonymous" : "Anonymous",
+      email: r.account?.email || "N/A",
+      avatar: accId ? profileMap.get(accId)?.avatar || "" : "",
+      role: "Attendee",
+      createdAt: r.createdAt,
+    };
+  });
 
   const topPartners = topPartnersRaw.map((s: any) => ({
     id: s._id,
@@ -651,7 +658,7 @@ const get_event_overview_from_db = async (eventId: any) => {
     },
 
     stats: {
-      totalRegistrations: totalRegistrations || event.expectedAttendee || 0,
+      totalRegistrations, // ✅ correct now
       checkedInAttendees,
       exhibitors,
       pendingRequests,
@@ -662,6 +669,107 @@ const get_event_overview_from_db = async (eventId: any) => {
     topPartners,
   };
 };
+// const get_event_overview_from_db = async (eventId: any) => {
+//   const event = await Event_Model.findById(eventId)
+//     .select("title location startDate endDate expectedAttendee")
+//     .lean();
+
+//   if (!event) {
+//     throw new AppError("Event not found", httpStatus.NOT_FOUND);
+//   }
+
+//   const [
+//     totalRegistrations,
+//     checkedInAttendees,
+//     exhibitors,
+//     pendingRequests,
+//     registrationTrend,
+//     recentRegs,
+//     topPartnersRaw,
+//   ] = await Promise.all([
+//     attendee_model.countDocuments({ event: eventId }),
+//     Attendance.countDocuments({ eventId }),
+//     invitation_model.countDocuments({
+//       eventId,
+//       role: "EXHIBITOR",
+//       status: "ACCEPTED",
+//     }),
+//     invitation_model.countDocuments({ eventId, status: "PENDING" }),
+//     attendee_model.aggregate([
+//       { $match: { event: new mongoose.Types.ObjectId(eventId) } },
+//       {
+//         $group: {
+//           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+//           count: { $sum: 1 },
+//         },
+//       },
+//       { $sort: { _id: 1 } },
+//       { $project: { date: "$_id", count: 1, _id: 0 } },
+//     ]),
+//     attendee_model
+//       .find({ event: eventId })
+//       .sort({ createdAt: -1 })
+//       .limit(5)
+//       .populate("account", "email")
+//       .lean(),
+//     sponsor_model
+//       .find({ eventId, status: "approved" })
+//       .sort({ profileView: -1 })
+//       .limit(5)
+//       .select("companyName logoUrl profileView")
+//       .lean(),
+//   ]);
+
+//   // Map user profiles for recent registrations
+//   const accountIds = recentRegs.map((r: any) => r.account?._id);
+//   const profiles = await UserProfile_Model.find({
+//     accountId: { $in: accountIds },
+//   })
+//     .select("accountId name avatar")
+//     .lean();
+
+//   const profileMap = new Map(
+//     profiles.map((p: any) => [p.accountId.toString(), p]),
+//   );
+
+//   const recentRegistrations = recentRegs.map((r: any) => ({
+//     id: r._id,
+//     name: profileMap.get(r.account?._id.toString())?.name || "Anonymous",
+//     email: r.account?.email || "N/A",
+//     avatar: profileMap.get(r.account?._id.toString())?.avatar || "",
+//     role: "Attendee", // Default
+//     createdAt: r.createdAt,
+//   }));
+
+//   const topPartners = topPartnersRaw.map((s: any) => ({
+//     id: s._id,
+//     name: s.companyName,
+//     logo: s.logoUrl,
+//     views: s.profileView || 0,
+//   }));
+
+//   return {
+//     eventInfo: {
+//       title: event.title,
+//       location: event.location,
+//       dateRange: {
+//         start: event.startDate,
+//         end: event.endDate,
+//       },
+//     },
+
+//     stats: {
+//       totalRegistrations: totalRegistrations || event.expectedAttendee || 0,
+//       checkedInAttendees,
+//       exhibitors,
+//       pendingRequests,
+//     },
+
+//     registrationTrend,
+//     recentRegistrations,
+//     topPartners,
+//   };
+// };
 
 // extra
 type THeaderEvent = {
