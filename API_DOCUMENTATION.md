@@ -320,10 +320,11 @@ All protected routes use the `auth()` middleware which:
 | 4 | GET | `/poster-assign/assigned/:eventId` | Get assigned posters | ORGANIZER, SUPER_ADMIN |
 | 5 | GET | `/poster-assign/reported/:eventId` | Get reported posters | ORGANIZER, SUPER_ADMIN |
 | 6 | GET | `/poster-assign/reviewer-stats/:eventId` | Get reviewer stats | ORGANIZER, SUPER_ADMIN |
-| 7 | GET | `/poster-assign/speakers/search/:eventId` | Search speakers | ORGANIZER, SUPER_ADMIN |
-| 8 | GET | `/poster-assign/unassigned/search/:eventId` | Search unassigned | ORGANIZER, SUPER_ADMIN |
-| 9 | POST | `/poster-assign/send-reminder/:assignmentId` | Send reminder | ORGANIZER, SUPER_ADMIN |
-| 10 | GET | `/poster-assign/top-posters/:eventId` | Get top posters | ORGANIZER, SUPER_ADMIN |
+| 7 | GET | `/poster-assign/reviewers/search/:eventId` | Search reviewers | ORGANIZER, SUPER_ADMIN |
+| 8 | GET | `/poster-assign/reviewers/:eventId` | Get all reviewers | ORGANIZER, SUPER_ADMIN |
+| 9 | GET | `/poster-assign/unassigned/search/:eventId` | Search unassigned | ORGANIZER, SUPER_ADMIN |
+| 10 | POST | `/poster-assign/send-reminder/:assignmentId` | Send reminder | ORGANIZER, SUPER_ADMIN |
+| 11 | GET | `/poster-assign/top-posters/:eventId` | Get top posters | ORGANIZER, SUPER_ADMIN |
 
 ### 3.16 Reviewer Module
 

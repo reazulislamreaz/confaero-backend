@@ -101,7 +101,7 @@ const get_reviewer_stats = catchAsync(async (req, res) => {
   });
 });
 
-const search_speakers = catchAsync(async (req, res) => {
+const search_reviewers = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const search = req.query.search?.toString() || "";
 
@@ -114,6 +114,22 @@ const search_speakers = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Reviewers fetched successfully",
+    data,
+  });
+});
+
+const get_reviewers = catchAsync(async (req, res) => {
+  const { eventId } = req.params;
+
+  const data = await poster_assign_service.get_all_reviewers_by_event(
+    eventId,
+    "",
+  );
+
+  manageResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All reviewers fetched successfully",
     data,
   });
 });
@@ -174,7 +190,8 @@ export const poster_assign_controller = {
   get_reported_files,
   // submit_review,
   get_reviewer_stats,
-  search_speakers,
+  search_reviewers,
+  get_reviewers,
   search_unassigned_files,
   reassign_poster_to_reviewer,
   send_review_reminder,

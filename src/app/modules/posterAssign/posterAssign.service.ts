@@ -603,7 +603,10 @@ const get_reviewer_stats = async (eventId: string) => {
 };
 
 // !ekhane speaker hbe na abstract reviewer hbe sob jaiga
-const get_all_reviewers_by_event = async (eventId: any, search: string = "") => {
+const get_all_reviewers_by_event = async (
+  eventId: any,
+  search: string = "",
+) => {
   const event = await Event_Model.findById(eventId)
     .select("participants")
     .lean();
@@ -617,32 +620,36 @@ const get_all_reviewers_by_event = async (eventId: any, search: string = "") => 
 
   if (!eligibleReviewerIds.length) return [];
 
-  // Search filter
-  const searchRegex = { $regex: search.trim(), $options: "i" };
+  let matchedAccountIds = eligibleReviewerIds;
 
-  // Find matching profiles and accounts
-  const [profiles, accounts] = await Promise.all([
-    UserProfile_Model.find({
-      accountId: { $in: eligibleReviewerIds },
-      name: searchRegex,
-    })
-      .select("accountId name avatar")
-      .lean(),
-    Account_Model.find({
-      _id: { $in: eligibleReviewerIds },
-      email: searchRegex,
-    })
-      .select("_id email")
-      .lean(),
-  ]);
+  if (search.trim()) {
+    // Search filter
+    const searchRegex = { $regex: search.trim(), $options: "i" };
 
-  // Combine unique account IDs that match either name or email
-  const matchedAccountIds = Array.from(
-    new Set([
-      ...profiles.map((p) => p.accountId.toString()),
-      ...accounts.map((a) => a._id.toString()),
-    ]),
-  ).map((id) => new Types.ObjectId(id));
+    // Find matching profiles and accounts
+    const [profiles, accounts] = await Promise.all([
+      UserProfile_Model.find({
+        accountId: { $in: eligibleReviewerIds },
+        name: searchRegex,
+      })
+        .select("accountId")
+        .lean(),
+      Account_Model.find({
+        _id: { $in: eligibleReviewerIds },
+        email: searchRegex,
+      })
+        .select("_id")
+        .lean(),
+    ]);
+
+    // Combine unique account IDs that match either name or email
+    matchedAccountIds = Array.from(
+      new Set([
+        ...profiles.map((p) => p.accountId.toString()),
+        ...accounts.map((a) => a._id.toString()),
+      ]),
+    ).map((id) => new Types.ObjectId(id));
+  }
 
   // Fetch final profile/account data and stats for matched users
   const [finalProfiles, finalAccounts, stats] = await Promise.all([

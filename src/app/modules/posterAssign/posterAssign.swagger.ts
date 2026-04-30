@@ -73,14 +73,25 @@ export const posterAssignSwaggerDocs = {
     },
   },
 
-  "/api/v1/poster-assign/speakers/search/{eventId}": {
+  "/api/v1/poster-assign/reviewers/search/{eventId}": {
     get: {
       tags: ["Poster Assign"],
-      summary: "Search speakers",
-      description: "Search for speakers to assign as reviewers.",
+      summary: "Search reviewers",
+      description: "Search for reviewers (Abstract Reviewer, Track Chair, Speaker) to assign as reviewers.",
       security: [{ AuthorizationToken: [] }],
       parameters: [{ name: "eventId", in: "path", required: true, schema: { type: "string" }, description: "Event ID" }],
       responses: { 200: { description: "Search results retrieved successfully" }, 401: { description: "Unauthorized" } },
+    },
+  },
+
+  "/api/v1/poster-assign/reviewers/{eventId}": {
+    get: {
+      tags: ["Poster Assign"],
+      summary: "Get all reviewers",
+      description: "Get all potential reviewers (Abstract Reviewer, Track Chair, Speaker) for an event.",
+      security: [{ AuthorizationToken: [] }],
+      parameters: [{ name: "eventId", in: "path", required: true, schema: { type: "string" }, description: "Event ID" }],
+      responses: { 200: { description: "All reviewers retrieved successfully" }, 401: { description: "Unauthorized" } },
     },
   },
 

@@ -46,10 +46,16 @@ poster_assign_router.get(
   poster_assign_controller.get_reviewer_stats,
 );
 poster_assign_router.get(
-  "/speakers/search/:eventId",
+  "/reviewers/search/:eventId",
   auth("ORGANIZER", "SUPER_ADMIN"),
   eventAccess(),
-  poster_assign_controller.search_speakers,
+  poster_assign_controller.search_reviewers,
+);
+poster_assign_router.get(
+  "/reviewers/:eventId",
+  auth("ORGANIZER", "SUPER_ADMIN"),
+  eventAccess(),
+  poster_assign_controller.get_reviewers,
 );
 poster_assign_router.get(
   "/unassigned/search/:eventId",
