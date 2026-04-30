@@ -602,80 +602,185 @@ const get_reviewer_stats = async (eventId: string) => {
   ]);
 };
 
-// !ekhane speaker hbe na abstract reviewer hbe sob jaiga
 const get_all_reviewers_by_event = async (
   eventId: any,
   search: string = "",
 ) => {
+  const eventObjectId = new Types.ObjectId(eventId);
+
+  // 1. Get eligible IDs from Event participants
   const event = await Event_Model.findById(eventId)
     .select("participants")
     .lean();
 
-  if (!event) return [];
+  const reviewerRoles = [
+    "ABSTRACT_REVIEWER",
+    "TRACK_CHAIR"
+  ];
 
-  const reviewerRoles = ["ABSTRACT_REVIEWER", "TRACK_CHAIR"];
-  const eligibleReviewerIds = (event.participants || [])
-    .filter((p: any) => reviewerRoles.includes(p.role))
-    .map((p: any) => p.accountId);
+  const participantIds = (event?.participants || [])
+    .filter((p: any) => p.accountId && reviewerRoles.includes(p.role))
+    .map((p: any) => p.accountId.toString());
 
-  if (!eligibleReviewerIds.length) return [];
+  // 2. Get IDs from existing assignments (to ensure we catch everyone)
+  const assignedReviewerIds = await poster_assign_model.distinct("reviewerId", {
+    eventId: eventObjectId,
+  });
 
-  let matchedAccountIds = eligibleReviewerIds;
+  const allEligibleIds = Array.from(
+    new Set([
+      ...participantIds,
+      ...assignedReviewerIds.map((id) => id.toString()),
+    ]),
+  );
+
+  if (!allEligibleIds.length) return [];
+
+  const uniqueAccountIds = allEligibleIds.map((id) => new Types.ObjectId(id));
+
+  let matchedAccountIds = uniqueAccountIds;
 
   if (search.trim()) {
-    // Search filter
     const searchRegex = { $regex: search.trim(), $options: "i" };
 
-    // Find matching profiles and accounts
     const [profiles, accounts] = await Promise.all([
       UserProfile_Model.find({
-        accountId: { $in: eligibleReviewerIds },
+        accountId: { $in: uniqueAccountIds },
         name: searchRegex,
       })
         .select("accountId")
         .lean(),
       Account_Model.find({
-        _id: { $in: eligibleReviewerIds },
+        _id: { $in: uniqueAccountIds },
         email: searchRegex,
       })
         .select("_id")
         .lean(),
     ]);
 
-    // Combine unique account IDs that match either name or email
-    matchedAccountIds = Array.from(
-      new Set([
-        ...profiles.map((p) => p.accountId.toString()),
-        ...accounts.map((a) => a._id.toString()),
-      ]),
-    ).map((id) => new Types.ObjectId(id));
+    const filteredIds = new Set([
+      ...profiles.map((p) => p.accountId.toString()),
+      ...accounts.map((a) => a._id.toString()),
+    ]);
+
+    matchedAccountIds = Array.from(filteredIds).map(
+      (id) => new Types.ObjectId(id),
+    );
   }
 
-  // Fetch final profile/account data and stats for matched users
-  const [finalProfiles, finalAccounts, stats] = await Promise.all([
+  if (!matchedAccountIds.length) return [];
+
+  // 3. Fetch final profile/account data
+  const [finalProfiles, finalAccounts] = await Promise.all([
     UserProfile_Model.find({ accountId: { $in: matchedAccountIds } })
       .select("accountId name avatar")
       .lean(),
     Account_Model.find({ _id: { $in: matchedAccountIds } })
       .select("email")
       .lean(),
-    poster_assign_model.aggregate([
-      {
-        $match: {
-          eventId: new Types.ObjectId(eventId),
-          reviewerId: { $in: matchedAccountIds },
-        },
+  ]);
+
+  // 4. Fetch Stats (mirrored from reviewer-stats logic)
+  const stats = await poster_assign_model.aggregate([
+    {
+      $match: {
+        eventId: eventObjectId,
+        reviewerId: { $in: matchedAccountIds },
       },
-      {
-        $group: {
-          _id: "$reviewerId",
-          assignedCount: { $sum: 1 },
-          completedCount: {
-            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
+    },
+    {
+      $lookup: {
+        from: "posters",
+        localField: "posterId",
+        foreignField: "_id",
+        as: "poster",
+      },
+    },
+    {
+      $unwind: { path: "$poster", preserveNullAndEmptyArrays: false },
+    },
+    {
+      $addFields: {
+        attachment: {
+          $first: {
+            $filter: {
+              input: { $ifNull: ["$poster.attachments", []] },
+              as: "a",
+              cond: { $eq: ["$$a._id", "$attachmentId"] },
+            },
           },
         },
       },
-    ]),
+    },
+    {
+      $addFields: {
+        numericScores: {
+          $cond: [
+            {
+              $and: [
+                { $eq: ["$status", "completed"] },
+                { $ne: ["$attachment.reviewScore", null] },
+              ],
+            },
+            {
+              $map: {
+                input: {
+                  $filter: {
+                    input: {
+                      $objectToArray: {
+                        $ifNull: ["$attachment.reviewScore", {}],
+                      },
+                    },
+                    as: "kv",
+                    cond: {
+                      $in: [
+                        { $type: "$$kv.v" },
+                        ["int", "long", "double", "decimal"],
+                      ],
+                    },
+                  },
+                },
+                as: "item",
+                in: "$$item.v",
+              },
+            },
+            [],
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$reviewerId",
+        assigned: { $sum: 1 },
+        completed: {
+          $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
+        },
+        allScores: { $push: { $ifNull: ["$numericScores", []] } },
+      },
+    },
+    {
+      $addFields: {
+        flatScores: {
+          $reduce: {
+            input: { $ifNull: ["$allScores", []] },
+            initialValue: [],
+            in: { $concatArrays: ["$$value", { $ifNull: ["$$this", []] }] },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        avgScore: {
+          $cond: [
+            { $eq: [{ $size: "$flatScores" }, 0] },
+            null,
+            { $round: [{ $avg: "$flatScores" }, 2] },
+          ],
+        },
+      },
+    },
   ]);
 
   const profileMap = new Map(
@@ -691,9 +796,13 @@ const get_all_reviewers_by_event = async (
     const profile = profileMap.get(userId);
     const email = accountMap.get(userId);
     const userStats = statsMap.get(userId) || {
-      assignedCount: 0,
-      completedCount: 0,
+      assigned: 0,
+      completed: 0,
+      avgScore: null,
     };
+
+    const assigned = userStats.assigned || 0;
+    const completed = userStats.completed || 0;
 
     return {
       reviewerId: userId,
@@ -701,9 +810,11 @@ const get_all_reviewers_by_event = async (
       email: email || "N/A",
       avatar: profile?.avatar || "",
       stats: {
-        assigned: userStats.assignedCount,
-        completed: userStats.completedCount,
-        pending: userStats.assignedCount - userStats.completedCount,
+        assigned,
+        completed,
+        pending: assigned - completed,
+        avgScore: userStats.avgScore,
+        progress: assigned === 0 ? 0 : Math.round((completed / assigned) * 100),
       },
     };
   });
