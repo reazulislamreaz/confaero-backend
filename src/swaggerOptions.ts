@@ -77,12 +77,12 @@ export const swaggerOptions = {
     servers:
       configs.env === "production"
         ? [
-            { url: "http://10.10.11.30:8081" },
+            { url: "http://10.10.11.30:8080" },
             { url: "https://reazul8078.suplify.life" },
           ]
         : [
             { url: "https://reazul8078.suplify.life" },
-            { url: "http://10.10.11.30:8081" },
+            { url: "http://10.10.11.30:8080" },
           ],
     components: {
       securitySchemes: {

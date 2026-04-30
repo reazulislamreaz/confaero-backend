@@ -318,18 +318,18 @@ export const authSwaggerDocs = {
   "/api/v1/auth/verified-account": {
     post: {
       tags: ["Auth"],
-      summary: "Verify account using token",
-      description:
-        "Verify a user's email account using a verification token from email link.",
+      summary: "Verify account using 6-digit code",
+      description: "Verify a user's email account using a 6-digit verification code sent to their email.",
       requestBody: {
         required: true,
         content: {
           "application/json": {
             schema: {
               type: "object",
-              required: ["token"],
+              required: ["email", "code"],
               properties: {
-                token: { type: "string", example: "eyJhbGciOiJIUzI1NiIs..." },
+                email: { type: "string", format: "email", example: "user@example.com" },
+                code: { type: "string", example: "123456" },
               },
             },
           },
@@ -337,7 +337,7 @@ export const authSwaggerDocs = {
       },
       responses: {
         200: { description: "Account verified successfully" },
-        400: { description: "Invalid or expired token" },
+        400: { description: "Invalid or expired code" },
       },
     },
   },
@@ -345,8 +345,8 @@ export const authSwaggerDocs = {
   "/api/v1/auth/new-verification-link": {
     post: {
       tags: ["Auth"],
-      summary: "Request a new verification link",
-      description: "Send a new verification link to the user's email address.",
+      summary: "Request a new verification code",
+      description: "Send a new 6-digit verification code to the user's email address.",
       requestBody: {
         required: true,
         content: {
@@ -366,7 +366,7 @@ export const authSwaggerDocs = {
         },
       },
       responses: {
-        200: { description: "Verification link resent successfully" },
+        200: { description: "Verification code resent successfully" },
         404: { description: "User not found or already verified" },
       },
     },

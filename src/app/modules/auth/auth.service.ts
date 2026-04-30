@@ -51,12 +51,19 @@ const register_user_into_db = async (payload: TRegisterPayload) => {
     // 3. hash password
     const hashPassword = await bcrypt.hash(payload.password, 10);
 
-    // 4. create account
+    // 4. generate verification code
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
+
+    // 5. create account
     const accountPayload: TAccount = {
       email: payload.email,
       password: hashPassword,
       lastPasswordChange: new Date(),
       emailNotificationOn: true,
+      verificationCode,
+      verificationExpire: new Date(Date.now() + 10 * 60 * 1000), // 10 min
     };
 
     const newAccount = await Account_Model.create([accountPayload], {
@@ -71,6 +78,28 @@ const register_user_into_db = async (payload: TRegisterPayload) => {
 
     // 6. COMMIT (VERY IMPORTANT)
     await session.commitTransaction();
+
+    // 7. Send Verification Email
+    await sendMail({
+      to: payload.email,
+      subject: "Account Verification Code",
+      textBody: `Account verification code is successfully created on ${new Date().toLocaleDateString()}`,
+      htmlBody: `
+            <p>Thanks for creating an account with us. We’re excited to have you on board! Use the code below to
+                verify your email and activate your account:</p>
+
+
+            <div style="text-align: center; margin: 30px 0;">
+                <h1 style="background-color: #f4f4f4; color: #333; padding: 10px; display: inline-block; letter-spacing: 5px;">
+                    ${verificationCode}
+                </h1>
+            </div>
+
+            <p>This code is valid for 10 minutes.</p>
+            <p>If you did not create this account, please ignore this email.</p>
+            `,
+    });
+
     const userObj = newAccount[0].toObject();
     userObj.password = "";
 
@@ -352,61 +381,66 @@ const reset_password_into_db = async (
   return "Password reset successfully!";
 };
 
-const verified_account_into_db = async (token: string) => {
-  try {
-    const { email } = jwtHelpers.verifyToken(
-      token,
-      configs.jwt.verified_token as string,
-    );
-    // check account is already verified or blocked
-    const isExistAccount = await Account_Model.findOne({ email });
-    // check account
-    if (!isExistAccount) {
-      throw new AppError("Account not found!!", httpStatus.NOT_FOUND);
-    }
-    if (isExistAccount.isDeleted) {
-      throw new AppError("Account deleted !!", httpStatus.BAD_REQUEST);
-    }
-    const result = await Account_Model.findOneAndUpdate(
-      { email },
-      { isVerified: true },
-      { new: true },
-    );
+const verified_account_into_db = async (email: string, code: string) => {
+  const account = await Account_Model.findOne({ email });
 
-    return result;
-  } catch (error) {
-    throw new AppError("Invalid or Expired token!!!", httpStatus.BAD_REQUEST);
+  if (!account) {
+    throw new AppError("Account not found!!", httpStatus.NOT_FOUND);
   }
+
+  if (account.isDeleted) {
+    throw new AppError("Account deleted !!", httpStatus.BAD_REQUEST);
+  }
+
+  if (
+    account.verificationCode !== code ||
+    !account.verificationExpire ||
+    account.verificationExpire < new Date()
+  ) {
+    throw new AppError("Invalid or expired code", httpStatus.BAD_REQUEST);
+  }
+
+  const result = await Account_Model.findOneAndUpdate(
+    { email },
+    {
+      isVerified: true,
+      verificationCode: null,
+      verificationExpire: null,
+    },
+    { new: true },
+  );
+
+  return result;
 };
 
 const get_new_verification_link_from_db = async (email: string) => {
   const isExistAccount = await isAccountExist(email);
 
-  const verifiedToken = jwtHelpers.generateToken(
-    {
-      email,
-    },
-    configs.jwt.verified_token as Secret,
-    "5m",
-  );
-  const verificationLink = `${configs.jwt.front_end_url}/verified?token=${verifiedToken}`;
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000,
+  ).toString();
+
+  await Account_Model.findByIdAndUpdate(isExistAccount._id, {
+    verificationCode,
+    verificationExpire: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+  });
+
   await sendMail({
     to: email,
-    subject: "New Verification link",
-    textBody: `New Account verification link is successfully created on ${new Date().toLocaleDateString()}`,
+    subject: "New Verification Code",
+    textBody: `New Account verification code is successfully created on ${new Date().toLocaleDateString()}`,
     htmlBody: `
-            <p>Thanks for creating an account with us. We’re excited to have you on board! Click the button below to
+            <p>Thanks for creating an account with us. We’re excited to have you on board! Use the code below to
                 verify your email and activate your account:</p>
 
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${verificationLink}" target="_blank"
-                    style="background-color: #4CAF50; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block; font-size: 18px;"
-                    class="btn">
-                    Verify My Email
-                </a>
+                <h1 style="background-color: #f4f4f4; color: #333; padding: 10px; display: inline-block; letter-spacing: 5px;">
+                    ${verificationCode}
+                </h1>
             </div>
 
+            <p>This code is valid for 10 minutes.</p>
             <p>If you did not create this account, please ignore this email.</p>
             `,
   });

@@ -20,6 +20,8 @@ export type TAccount = {
   activeRole?: Role;
   refreshToken?: string;
   isVerified?: boolean;
+  verificationCode?: string;
+  verificationExpire?: Date;
   resetPasswordCode?: String;
   resetPasswordExpire?: Date;
   activeEvent?: any;

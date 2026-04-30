@@ -101,7 +101,8 @@ const reset_password = catchAsync(async (req, res) => {
 });
 
 const verified_account = catchAsync(async (req, res) => {
-  const result = await auth_services.verified_account_into_db(req?.body?.token);
+  const { email, code } = req.body;
+  const result = await auth_services.verified_account_into_db(email, code);
 
   manageResponse(res, {
     statusCode: httpStatus.OK,
@@ -118,7 +119,7 @@ const get_new_verification_link = catchAsync(async (req, res) => {
   manageResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "New Verification link is send on email.",
+    message: "New Verification code is send on email.",
     data: result,
   });
 });

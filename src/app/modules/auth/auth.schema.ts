@@ -15,6 +15,8 @@ const authSchema = new Schema<TAccount>(
     activeRole: { type: String, default: "ATTENDEE" },
     refreshToken: { type: String },
     isVerified: { type: Boolean, default: false },
+    verificationCode: { type: String },
+    verificationExpire: { type: Date },
     resetPasswordCode: { type: String },
     resetPasswordExpire: { type: Date },
     activeEvent: {

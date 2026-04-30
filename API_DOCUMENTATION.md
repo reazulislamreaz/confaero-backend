@@ -94,8 +94,8 @@
 |------------|--------|---------|-------|
 | **Access Token** | Configurable | Frontend (memory/localStorage) | API authorization (Bearer token) |
 | **Refresh Token** | Configurable | HTTP-only cookie | Generate new access token |
-| **Reset Token** | 10 minutes | Email link | Password reset |
-| **Verification Token** | 5 minutes | Email link | Email verification |
+| **Reset Token** | 10 minutes | Email code | Password reset |
+| **Verification Code** | 10 minutes | Email code | Email verification |
 
 ### Authentication Endpoints
 
@@ -110,7 +110,7 @@
 | `/auth/verify-reset-code` | POST | Verify OTP code | Public |
 | `/auth/reset-password` | POST | Reset password with token | Public |
 | `/auth/verified-account` | POST | Verify email account | Public |
-| `/auth/new-verification-link` | POST | Resend verification link | Public |
+| `/auth/new-verification-link` | POST | Resend verification code | Public |
 | `/auth/delete-account` | DELETE | Delete user account | Authenticated |
 | `/auth/change-role` | POST | Switch active role | Authenticated |
 | `/auth/my-roles` | GET | Get all user roles | Authenticated |
@@ -685,6 +685,47 @@ All protected routes use the `auth()` middleware which:
     "accessToken": "eyJhbG...",
     "activeRole": "SPEAKER"
   }
+}
+```
+
+#### Verify Email
+- **Method:** POST
+- **URL:** `/api/v1/auth/verified-account`
+- **Description:** Verify user email using 6-digit code
+- **Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "code": "123456"
+}
+```
+- **Response:**
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Account Verification successful.",
+  "data": { ... }
+}
+```
+
+#### Resend Verification Code
+- **Method:** POST
+- **URL:** `/api/v1/auth/new-verification-link`
+- **Description:** Resend 6-digit verification code to email
+- **Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+- **Response:**
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "New Verification code is send on email.",
+  "data": null
 }
 ```
 
@@ -2708,6 +2749,6 @@ Currently allows all origins (`*`). Restrict to specific frontend URLs in produc
 
 ---
 
-**Documentation Version:** 1.0.0  
-**Last Updated:** 2024  
+**Documentation Version:** 1.0.1  
+**Last Updated:** April 2026  
 **Contact:** Backend Team

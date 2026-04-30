@@ -105,7 +105,7 @@ const search_speakers = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const search = req.query.search?.toString() || "";
 
-  const data = await poster_assign_service.search_event_speakers(
+  const data = await poster_assign_service.get_all_reviewers_by_event(
     eventId,
     search,
   );
@@ -113,7 +113,7 @@ const search_speakers = catchAsync(async (req, res) => {
   manageResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "reviewer fetch successfully",
+    message: "Reviewers fetched successfully",
     data,
   });
 });

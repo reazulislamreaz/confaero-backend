@@ -33,7 +33,8 @@ const resetPassword = z.object({
 });
 
 const verified_account = z.object({
-  token: z.string({ message: "Token is Required!!" }),
+  email: z.string({ message: "Email is Required!!" }).email(),
+  code: z.string({ message: "Code is Required!!" }).length(6),
 });
 
 const deleteAccount = z.object({

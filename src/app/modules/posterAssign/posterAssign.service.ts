@@ -603,32 +603,103 @@ const get_reviewer_stats = async (eventId: string) => {
 };
 
 // !ekhane speaker hbe na abstract reviewer hbe sob jaiga
-const search_event_speakers = async (eventId: any, search: string) => {
+const get_all_reviewers_by_event = async (eventId: any, search: string = "") => {
   const event = await Event_Model.findById(eventId)
     .select("participants")
     .lean();
 
   if (!event) return [];
-  const allowedRoles = new Set(["ABSTRACT_REVIEWER", "TRACK_CHAIR"]);
 
-  const speakerIds = event.participants
-    .filter((p: any) => allowedRoles.has(p.role))
+  const reviewerRoles = ["ABSTRACT_REVIEWER", "TRACK_CHAIR"];
+  const eligibleReviewerIds = (event.participants || [])
+    .filter((p: any) => reviewerRoles.includes(p.role))
     .map((p: any) => p.accountId);
 
-  if (!speakerIds.length) return [];
+  if (!eligibleReviewerIds.length) return [];
 
-  const speakers = await Account_Model.find({
-    _id: { $in: speakerIds },
-    email: { $regex: search.trim(), $options: "i" },
-  })
-    .select("_id email")
-    .limit(10)
-    .lean();
+  // Search filter
+  const searchRegex = { $regex: search.trim(), $options: "i" };
 
-  return speakers.map((s) => ({
-    reviewerId: s._id,
-    email: s.email,
-  }));
+  // Find matching profiles and accounts
+  const [profiles, accounts] = await Promise.all([
+    UserProfile_Model.find({
+      accountId: { $in: eligibleReviewerIds },
+      name: searchRegex,
+    })
+      .select("accountId name avatar")
+      .lean(),
+    Account_Model.find({
+      _id: { $in: eligibleReviewerIds },
+      email: searchRegex,
+    })
+      .select("_id email")
+      .lean(),
+  ]);
+
+  // Combine unique account IDs that match either name or email
+  const matchedAccountIds = Array.from(
+    new Set([
+      ...profiles.map((p) => p.accountId.toString()),
+      ...accounts.map((a) => a._id.toString()),
+    ]),
+  ).map((id) => new Types.ObjectId(id));
+
+  // Fetch final profile/account data and stats for matched users
+  const [finalProfiles, finalAccounts, stats] = await Promise.all([
+    UserProfile_Model.find({ accountId: { $in: matchedAccountIds } })
+      .select("accountId name avatar")
+      .lean(),
+    Account_Model.find({ _id: { $in: matchedAccountIds } })
+      .select("email")
+      .lean(),
+    poster_assign_model.aggregate([
+      {
+        $match: {
+          eventId: new Types.ObjectId(eventId),
+          reviewerId: { $in: matchedAccountIds },
+        },
+      },
+      {
+        $group: {
+          _id: "$reviewerId",
+          assignedCount: { $sum: 1 },
+          completedCount: {
+            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
+          },
+        },
+      },
+    ]),
+  ]);
+
+  const profileMap = new Map(
+    finalProfiles.map((p) => [p.accountId.toString(), p]),
+  );
+  const accountMap = new Map(
+    finalAccounts.map((a) => [a._id.toString(), a.email]),
+  );
+  const statsMap = new Map(stats.map((s) => [s._id.toString(), s]));
+
+  return matchedAccountIds.map((id) => {
+    const userId = id.toString();
+    const profile = profileMap.get(userId);
+    const email = accountMap.get(userId);
+    const userStats = statsMap.get(userId) || {
+      assignedCount: 0,
+      completedCount: 0,
+    };
+
+    return {
+      reviewerId: userId,
+      name: profile?.name || "Anonymous",
+      email: email || "N/A",
+      avatar: profile?.avatar || "",
+      stats: {
+        assigned: userStats.assignedCount,
+        completed: userStats.completedCount,
+        pending: userStats.assignedCount - userStats.completedCount,
+      },
+    };
+  });
 };
 const search_unassigned_files_for_assign = async (params: {
   eventId: any;
@@ -849,7 +920,7 @@ export const poster_assign_service = {
   get_reported_files,
   // submit_review,
   get_reviewer_stats,
-  search_event_speakers,
+  get_all_reviewers_by_event,
   search_unassigned_files_for_assign,
   get_assigned_abstracts_by_reviewer_test,
 
