@@ -18,6 +18,7 @@ export const jwtHelpers = {
   verifyToken,
 };
 export type JwtPayloadType = JwtPayload & {
+  id: string;
   email: string;
   role: string;
   activeRole: string;

@@ -103,7 +103,7 @@ const get_event_attendees_from_db = async (
     name: 1,
     avatar: 1,
     affiliations: 1,
-  }).lean()) as AttendeeProfile[];
+  }).lean()) as unknown as AttendeeProfile[];
 
   const profileMap = new Map(profiles.map((p) => [p.accountId.toString(), p]));
 
@@ -163,7 +163,7 @@ const get_event_attendee_detail_from_db = async (
   const event = (await Event_Model.findById(eventId, {
     participants: 1,
     organizers: 1,
-  }).lean()) as {
+  }).lean()) as unknown as {
     participants: EventParticipant[];
     organizers: Types.ObjectId[];
   } | null;
@@ -204,7 +204,7 @@ const get_event_attendee_detail_from_db = async (
       contact: 1,
       location: 1,
     },
-  ).lean()) as UserProfileLean | null;
+  ).lean()) as unknown as UserProfileLean | null;
 
   /* 4️⃣ Bookmark check */
   const bookmark = await EventAttendeeBookmark_Model.findOne({

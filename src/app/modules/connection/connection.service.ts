@@ -316,7 +316,7 @@ const get_connection_detail_from_db = async (
       contact: 1,
       location: 1,
     },
-  ).lean()) as UserProfileLean | null;
+  ).lean()) as unknown as UserProfileLean | null;
 
   // 3️⃣ Affiliation resolve
   const currentAffiliation =

@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import catchAsync from "../../utils/catch_async";
 import manageResponse from "../../utils/manage_response";
 import httpStatus from "http-status";
@@ -8,8 +9,8 @@ const getEventAttendees = catchAsync(async (req, res) => {
   const { search, role, bookmarked } = req.query;
 
   const result = await event_attendee_service.get_event_attendees_from_db(
-    eventId as any,
-    req.user!.id,
+    new Types.ObjectId(eventId as string),
+    new Types.ObjectId(req.user!.id),
     {
       search: search as string,
       role: role as string,
@@ -28,9 +29,9 @@ const getEventAttendeeDetail = catchAsync(async (req, res) => {
   const { eventId, accountId } = req.params;
 
   const result = await event_attendee_service.get_event_attendee_detail_from_db(
-    eventId as any,
-    accountId as any,
-    req.user!.id,
+    new Types.ObjectId(eventId as string),
+    new Types.ObjectId(accountId as string),
+    new Types.ObjectId(req.user!.id),
   );
 
   manageResponse(res, {
@@ -44,9 +45,9 @@ const getEventAttendeeDetail = catchAsync(async (req, res) => {
 const toggle_bookmark = catchAsync(async (req, res) => {
   const { eventId, accountId } = req.params;
   const result = await event_attendee_service.toggle_bookmark_into_db(
-    req.user!.id,
-    accountId,
-    eventId,
+    new Types.ObjectId(req.user!.id),
+    new Types.ObjectId(accountId as string),
+    new Types.ObjectId(eventId as string),
   );
 
   manageResponse(res, {

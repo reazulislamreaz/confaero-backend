@@ -4,7 +4,7 @@ import httpStatus from "http-status";
 import { report_service } from "./report.service";
 
 const report_task_issue = catchAsync(async (req, res) => {
-  const result = await report_service.report_issue(req.body, req.user?.id);
+  const result = await report_service.report_issue(req.body, req.user!.id);
 
   manageResponse(res, {
     statusCode: httpStatus.CREATED,

@@ -7,7 +7,7 @@ import { task_service } from "./volunteer.service";
 const create_task = catchAsync(async (req, res) => {
   const result = await task_service.create_task_and_assign(
     req.body,
-    req.user?.id,
+    req.user!.id,
   );
 
   manageResponse(res, {
@@ -20,8 +20,8 @@ const create_task = catchAsync(async (req, res) => {
 
 const get_task_details = catchAsync(async (req, res) => {
   const { taskId } = req.params;
-  const userId = req.user?.id;
-  const role = req.user?.activeRole;
+  const userId = req.user!.id;
+  const role = req.user!.activeRole;
 
   const result = await task_service.get_task_details_by_id(
     taskId,
@@ -38,7 +38,7 @@ const get_task_details = catchAsync(async (req, res) => {
 });
 const my_tasks = catchAsync(async (req, res) => {
   const { filter } = req.query;
-  const result = await task_service.get_my_tasks(req.user?.id, filter as string);
+  const result = await task_service.get_my_tasks(req.user!.id, filter as string);
 
   manageResponse(res, {
     statusCode: httpStatus.OK,
@@ -51,7 +51,7 @@ const my_tasks = catchAsync(async (req, res) => {
 const complete_task = catchAsync(async (req, res) => {
   const result = await task_service.complete_task(
     req.params.taskId,
-    req.user?.id,
+    req.user!.id,
   );
 
   manageResponse(res, {
@@ -63,7 +63,7 @@ const complete_task = catchAsync(async (req, res) => {
 });
 
 const today_progress = catchAsync(async (req, res) => {
-  const result = await task_service.get_today_progress(req.user?.id);
+  const result = await task_service.get_today_progress(req.user!.id);
 
   manageResponse(res, {
     statusCode: httpStatus.OK,

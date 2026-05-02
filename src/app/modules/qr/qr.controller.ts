@@ -14,14 +14,17 @@ import {
   update_lead_tags_service,
 } from "./leadService";
 import { TQrPayload } from "./qr.interface";
+import { booth_service } from "../booth/booth.service";
+import { AppError } from "../../utils/app_error";
+import { Lead } from "./qr.schema";
 
 const generate_qr = catchAsync(async (req, res) => {
   const { eventId } = req.params;
-  const user = req.user;
+  const user = req.user!;
 
   const result = qr_service.generate_qr_token(
-    user?.id,
-    user?.activeRole as TQrPayload["activeRole"] | undefined,
+    user.id,
+    user.activeRole as TQrPayload["activeRole"] | undefined,
     eventId,
   );
 
@@ -76,7 +79,7 @@ export const scan_qr_controller = catchAsync(async (req, res) => {
 
 export const get_volunteer_checkin_history = catchAsync(async (req, res) => {
   const { eventId } = req.params;
-  const volunteerId = req.user?.id;
+  const volunteerId = req.user!.id;
 
   const data = await get_volunteer_checkin_history_service({
     eventId,
@@ -95,8 +98,12 @@ export const get_volunteer_checkin_history = catchAsync(async (req, res) => {
 
 const get_exhibitor_leads = catchAsync(async (req, res) => {
   const { eventId } = req.params;
-  const exhibitorId = req.user?.id;
+  const user = req.user!;
   const { filter = "all", search = "" } = req.query;
+
+  // Find the booth to get the correct exhibitorId (works for both EXHIBITOR and STAFF)
+  const booth = await booth_service.get_my_booth_from_db(user.id, eventId as string);
+  const exhibitorId = (booth as any).exhibitorId.toString();
 
   const data = await get_exhibitor_leads_service({
     eventId: eventId as string,
@@ -115,7 +122,17 @@ const get_exhibitor_leads = catchAsync(async (req, res) => {
 const update_lead_note = catchAsync(async (req, res) => {
   const { leadId } = req.params;
   const { note } = req.body;
-  const exhibitorId = req.user?.id;
+  const user = req.user!;
+
+  // 1. Find lead to get eventId
+  const leadData = await Lead.findById(leadId);
+  if (!leadData) {
+    throw new AppError("Lead not found", httpStatus.NOT_FOUND);
+  }
+
+  // 2. Find booth to get correct exhibitorId
+  const booth = await booth_service.get_my_booth_from_db(user.id, leadData.eventId.toString());
+  const exhibitorId = (booth as any).exhibitorId.toString();
 
   const data = await update_lead_note_service({
     leadId,
@@ -134,7 +151,17 @@ const update_lead_note = catchAsync(async (req, res) => {
 const update_lead_tags = catchAsync(async (req, res) => {
   const { leadId } = req.params;
   const { tags } = req.body;
-  const exhibitorId = req.user?.id;
+  const user = req.user!;
+
+  // 1. Find lead to get eventId
+  const leadData = await Lead.findById(leadId);
+  if (!leadData) {
+    throw new AppError("Lead not found", httpStatus.NOT_FOUND);
+  }
+
+  // 2. Find booth to get correct exhibitorId
+  const booth = await booth_service.get_my_booth_from_db(user.id, leadData.eventId.toString());
+  const exhibitorId = (booth as any).exhibitorId.toString();
 
   const data = await update_lead_tags_service({
     leadId,

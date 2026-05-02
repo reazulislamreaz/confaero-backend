@@ -4,6 +4,7 @@ import { get_exhibitor_performance_service } from "./exhibitor.service";
 import manageResponse from "../../utils/manage_response";
 import httpStatus from "http-status";
 import { JwtPayloadType } from "../../utils/JWT";
+import { booth_service } from "../booth/booth.service";
 
 const get_exhibitor_performance = catchAsync(async (req: Request, res: Response) => {
   const { eventId } = req.params;
@@ -12,7 +13,10 @@ const get_exhibitor_performance = catchAsync(async (req: Request, res: Response)
     limit?: string;
   };
   const user = req.user as JwtPayloadType;
-  const exhibitorId = user.id;
+  
+  // Find the booth to get the correct exhibitorId (works for both EXHIBITOR and STAFF)
+  const booth = await booth_service.get_my_booth_from_db(user.id, eventId as string);
+  const exhibitorId = (booth as any).exhibitorId.toString();
 
   const result = await get_exhibitor_performance_service({
     exhibitorId,

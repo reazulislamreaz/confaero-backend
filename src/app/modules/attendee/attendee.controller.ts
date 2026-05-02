@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import catchAsync from "../../utils/catch_async";
 import manageResponse from "../../utils/manage_response";
 import httpStatus from "http-status";
@@ -18,9 +19,9 @@ const get_all_upcoming_events = catchAsync(async (req, res) => {
 // real register flow
 const initiate_attendee_registration = catchAsync(async (req, res) => {
   const result = await attendee_service.initiate_attendee_registration(
-    req.user?.id,
-    req.user?.email,
-    req.params.eventId as any,
+    new Types.ObjectId(req.user!.id),
+    req.user!.email,
+    new Types.ObjectId(req.params.eventId as string),
   );
   manageResponse(res, {
     statusCode: httpStatus.OK,
@@ -33,7 +34,7 @@ const initiate_attendee_registration = catchAsync(async (req, res) => {
 //
 const get_my_all_events = catchAsync(async (req, res) => {
   const result = await attendee_service.get_my_registered_events_from_db(
-    req.user?.id,
+    new Types.ObjectId(req.user!.id),
   );
   manageResponse(res, {
     statusCode: httpStatus.OK,
@@ -45,7 +46,7 @@ const get_my_all_events = catchAsync(async (req, res) => {
 //
 const get_my_events = catchAsync(async (req, res) => {
   const result = await attendee_service.get_my_registered_events_from_db(
-    req.user?.id,
+    new Types.ObjectId(req.user!.id),
   );
   manageResponse(res, {
     statusCode: httpStatus.OK,
@@ -60,8 +61,8 @@ const get_single_event = catchAsync(async (req, res) => {
   const { eventId } = req.params;
 
   const result = await attendee_service.get_single_event_from_db(
-    eventId as unknown as any,
-    req.user?.id,
+    new Types.ObjectId(eventId as string),
+    req.user!.id,
   );
 
   manageResponse(res, {
@@ -79,7 +80,7 @@ const get_event_sessions = catchAsync(async (req, res) => {
   const { eventId } = req.params;
 
   const result = await attendee_service.get_event_sessions_from_db(
-    eventId as unknown as any,
+    new Types.ObjectId(eventId as string),
   );
 
   manageResponse(res, {
@@ -93,7 +94,9 @@ const get_event_sessions = catchAsync(async (req, res) => {
 const get_event_home = catchAsync(async (req, res) => {
   const { eventId } = req.params;
 
-  const result = await attendee_service.get_event_home_from_db(eventId);
+  const result = await attendee_service.get_event_home_from_db(
+    new Types.ObjectId(eventId as string),
+  );
 
   manageResponse(res, {
     statusCode: httpStatus.OK,
@@ -107,8 +110,8 @@ const generate_qr_token = catchAsync(async (req, res) => {
   const userId = req.user?.id;
 
   const result = await attendee_service.generate_qr_token_from_db(
-    userId,
-    eventId,
+    new Types.ObjectId(userId!),
+    new Types.ObjectId(eventId as string),
   );
 
   manageResponse(res, {
@@ -126,9 +129,9 @@ const join_event = catchAsync(async (req, res) => {
   const role = req.query.role; // 👈 query role
 
   const result = await attendee_service.join_event_from_db(
-    userId,
-    eventId,
-    role,
+    new Types.ObjectId(userId!),
+    new Types.ObjectId(eventId as string),
+    role as string,
   );
 
   manageResponse(res, {
@@ -148,7 +151,7 @@ const get_my_unified_events = catchAsync(async (req, res) => {
   }
 
   const result = await attendee_service.get_my_unified_events_from_db(
-    userId,
+    new Types.ObjectId(userId),
     userEmail,
   );
 

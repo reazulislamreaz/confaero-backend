@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import catchAsync from "../../utils/catch_async";
 import manageResponse from "../../utils/manage_response";
 import httpStatus from "http-status";
@@ -14,9 +15,9 @@ const send = catchAsync(async (req, res) => {
   const userId = req.user.id;
 
   const result = await message_service.send_message(
-    userId,
-    eventId,
-    receiverId,
+    new Types.ObjectId(userId),
+    new Types.ObjectId(eventId as string),
+    new Types.ObjectId(receiverId as string),
     text,
   );
 
@@ -39,8 +40,8 @@ const conversations = catchAsync(async (req, res) => {
   const { page = "1", limit = "10", search = "" } = req.query;
 
   const result = await message_service.get_conversations(
-    userId,
-    eventId,
+    new Types.ObjectId(userId),
+    new Types.ObjectId(eventId as string),
     Number(page),
     Number(limit),
     String(search),
@@ -63,7 +64,10 @@ const messages = catchAsync(async (req, res) => {
   const { conversationId } = req.params;
   const userId = req.user.id;
 
-  const result = await message_service.get_messages(conversationId, userId);
+  const result = await message_service.get_messages(
+    new Types.ObjectId(conversationId as string),
+    new Types.ObjectId(userId),
+  );
 
   manageResponse(res, {
     success: true,
@@ -81,7 +85,10 @@ const seen = catchAsync(async (req, res) => {
   const { conversationId } = req.params;
   const userId = req.user.id;
 
-  await message_service.mark_seen(conversationId, userId);
+  await message_service.mark_seen(
+    new Types.ObjectId(conversationId as string),
+    new Types.ObjectId(userId),
+  );
 
   manageResponse(res, {
     success: true,

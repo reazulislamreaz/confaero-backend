@@ -8,8 +8,8 @@ const create_new_photo = catchAsync(async (req, res) => {
     eventId: req.params.eventId,
     imageUrl: req.body.imageUrl,
     type: req.body.type,
-    userId: req.user?.id,
-    role: req.user?.activeRole,
+    userId: req.user!.id,
+    role: req.user!.activeRole,
   });
  
 
@@ -44,8 +44,8 @@ const get_event_photos = catchAsync(async (req, res) => {
 const delete_photo = catchAsync(async (req, res) => {
   await photo_service.delete_photo_from_db({
     photoId: req.params.photoId,
-    userId: req.user?.id,
-    role: req.user?.activeRole,
+    userId: req.user!.id,
+    role: req.user!.activeRole,
   });
 
   manageResponse(res, {

@@ -318,7 +318,7 @@ const get_single_event_from_db = async (
 const get_event_sessions_from_db = async (eventId: Types.ObjectId) => {
   const event = (await Event_Model.findById(eventId)
     .select("agenda")
-    .lean()) as { agenda?: any[] };
+    .lean()) as unknown as { agenda?: any[] };
 
   return event?.agenda || [];
 };

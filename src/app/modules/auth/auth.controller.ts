@@ -167,7 +167,7 @@ const get_my_roles = catchAsync(async (req, res) => {
 
 const change_notification = catchAsync(async (req, res) => {
   const result = await auth_services.change_notification_from_db(
-    req.user!.id,
+    req.user!,
     req.body.emailNotificationOn,
   );
   manageResponse(res, {

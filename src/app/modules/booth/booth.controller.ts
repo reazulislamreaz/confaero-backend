@@ -4,7 +4,7 @@ import httpStatus from "http-status";
 import { booth_service } from "./booth.service";
 
 const create_new_booth = catchAsync(async (req, res) => {
-  const exhibitorId = req.user?.id;
+  const exhibitorId = req.user!.id;
 
   const payload = {
     ...req.body,
@@ -24,7 +24,7 @@ const create_new_booth = catchAsync(async (req, res) => {
 const get_my_booth = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.get_my_booth_from_db(
-    req.user?.id,
+    req.user!.id,
     eventId as string,
   );
 
@@ -39,7 +39,7 @@ const get_my_booth = catchAsync(async (req, res) => {
 const update_my_booth = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.update_my_booth_into_db(
-    req.user?.id,
+    req.user!.id,
     eventId as string,
     req.body,
   );
@@ -55,7 +55,7 @@ const update_my_booth = catchAsync(async (req, res) => {
 const add_booth_staff_by_email = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.add_staff_by_email_into_db(
-    req.user?.id,
+    req.user!.id,
     eventId as string,
     req.body.email,
   );
@@ -71,7 +71,7 @@ const add_booth_staff_by_email = catchAsync(async (req, res) => {
 const get_booth_staff_list = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.get_booth_staff_list_from_db(
-    req.user?.id,
+    req.user!.id,
     eventId as string,
   );
 
@@ -86,7 +86,7 @@ const get_booth_staff_list = catchAsync(async (req, res) => {
 const get_booth_analytics = catchAsync(async (req, res) => {
   const { eventId } = req.params;
   const result = await booth_service.get_booth_analytics_from_db(
-    req.user?.id,
+    req.user!.id,
     eventId as string,
   );
 

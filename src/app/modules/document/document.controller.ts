@@ -8,8 +8,8 @@ import { document_service } from "./document.service";
 
 const create_new_document = catchAsync(async (req, res) => {
   const { eventId } = req.params;
-  const uploadedBy = req.user?.id;
-  const activeRole = req.user?.activeRole;
+  const uploadedBy = req.user!.id;
+  const activeRole = req.user!.activeRole;
 
   if (
     req.body.documentUrl &&
@@ -35,7 +35,7 @@ const create_new_document = catchAsync(async (req, res) => {
 
 const get_my_documents = catchAsync(async (req, res) => {
   const { eventId } = req.params;
-  const uploadedBy = req.user?.id;
+  const uploadedBy = req.user!.id;
 
   const result = await document_service.get_my_documents_from_db(
     eventId,
@@ -52,7 +52,7 @@ const get_my_documents = catchAsync(async (req, res) => {
 
 const delete_my_document = catchAsync(async (req, res) => {
   const { documentId } = req.params;
-  const uploadedBy = req.user?.id;
+  const uploadedBy = req.user!.id;
 
   const result = await document_service.delete_my_document_from_db(
     documentId,

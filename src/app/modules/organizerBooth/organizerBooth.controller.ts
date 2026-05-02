@@ -6,8 +6,8 @@ import { organizer_booth_service } from "./organizerBooth.service";
 const get_event_booths = catchAsync(async (req, res) => {
   const result = await organizer_booth_service.get_event_booths_into_db(
     req.params.eventId as string,
-    req.user?.id,
-    req.user?.activeRole,
+    req.user!.id,
+    req.user!.activeRole,
     req.query.isAccepted as string,
   );
 
@@ -22,7 +22,7 @@ const get_event_booths = catchAsync(async (req, res) => {
 const get_booth_details = catchAsync(async (req, res) => {
   const result = await organizer_booth_service.get_booth_details_into_db(
     req.params.boothId as string,
-    req.user?.id,
+    req.user!.id,
   );
 
   manageResponse(res, {
@@ -37,7 +37,7 @@ const update_booth_number = catchAsync(async (req, res) => {
   const result = await organizer_booth_service.update_booth_number_into_db(
     req.params.boothId as string,
     req.body.boothNumber,
-    req.user?.id,
+    req.user!.id,
   );
 
   manageResponse(res, {
@@ -51,7 +51,7 @@ const update_booth_number = catchAsync(async (req, res) => {
 const accept_booth = catchAsync(async (req, res) => {
   const result = await organizer_booth_service.accept_booth_into_db(
     req.params.boothId as string,
-    req.user?.id,
+    req.user!.id,
   );
 
   manageResponse(res, {
@@ -65,7 +65,7 @@ const accept_booth = catchAsync(async (req, res) => {
 const cancel_booth = catchAsync(async (req, res) => {
   const result = await organizer_booth_service.cancel_booth_into_db(
     req.params.boothId as string,
-    req.user?.id,
+    req.user!.id,
   );
 
   manageResponse(res, {
