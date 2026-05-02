@@ -1,9 +1,15 @@
-# Confaero Backend API  Documentation
+# Confaero Backend API Documentation
 
 **Version:** 1.0.0  
-**Base URL:** `/api/v1`  
 **Server:** Node.js + Express + TypeScript  
 **Database:** MongoDB (Mongoose)  
+
+---
+
+## 🌐 Base URL
+
+- **Production API URL:** [http://206.162.244.11:8078/](http://206.162.244.11:8078/)
+- **API Prefix:** `/api/v1`
 
 ---
 

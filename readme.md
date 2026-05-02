@@ -11,6 +11,24 @@
 
 **A comprehensive, production-ready conference management system with real-time features, multi-role authentication, payment integration, and academic review workflows**
 
+---
+
+## 🔗 Live Links
+
+- **Dashboard:** [http://206.162.244.11:3060/](http://206.162.244.11:3060/)
+- **API:** [http://206.162.244.11:8078/](http://206.162.244.11:8078/)
+
+---
+
+## 🎨 Design & UI Preview
+
+Explore the complete UI/UX design of the project using the Figma link below:
+
+👉 **Figma Design:**  
+[Confaero Event Application](https://www.figma.com/design/gEtAVXwxp0qCV9HvqLaDVJ/Confaero-Event-Application?node-id=4001-8694&p=f&t=FB2MCq64b4Le5Ll0-0)
+
+---
+
 [Features](#-key-features) • [Tech Stack](#-technology-stack) • [Architecture](#-system-architecture) • [Setup](#-getting-started) • [API Documentation](#-api-documentation) • [Challenges](#-challenges--solutions)
 
 </div>
@@ -42,6 +60,10 @@
 - [Contact](#-contact)
 
 ---
+
+
+![Confaero Dashboard login page](https://i.postimg.cc/CKD0QCRb/Screenshot-from-2026-05-02-10-45-34.png) 
+
 
 ## 🎯 Overview
 
