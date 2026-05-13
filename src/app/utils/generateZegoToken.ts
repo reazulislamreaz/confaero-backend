@@ -34,11 +34,9 @@ export const generateZegoToken = (
   const payloadString = JSON.stringify(payload);
   const payloadBase64 = Buffer.from(payloadString).toString("base64");
 
-  // HMAC-SHA256 signature using AppSign as the secret
-  const signature = crypto
-    .createHmac("sha256", appSign)
-    .update(payloadBase64)
-    .digest("hex");
+  // HMAC-SHA256 signature using AppSign as a binary buffer (from hex)
+  const hmac = crypto.createHmac("sha256", Buffer.from(appSign, "hex"));
+  const signature = hmac.update(payloadBase64).digest("hex");
 
   return `${payloadBase64}.${signature}`;
 };
