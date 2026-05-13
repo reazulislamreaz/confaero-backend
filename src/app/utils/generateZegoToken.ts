@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
 const appId = Number(process.env.ZEGOCLOUD_APP_ID);
-const serverSecret = process.env.ZEGOCLOUD_SERVER_SECRET as string;
+const appSign = process.env.ZEGOCLOUD_APP_SIGN as string;
 
 /**
  * Generate ZEGOCLOUD RTC token
@@ -11,8 +11,8 @@ export const generateZegoToken = (
   role: "SPEAKER" | "ATTENDEE",
   roomId: string,
 ) => {
-  if (!appId || !serverSecret) {
-    throw new Error("Zego credentials missing");
+  if (!appId || !appSign) {
+    throw new Error("Zego credentials missing (AppID or AppSign)");
   }
 
   const effectiveTimeInSeconds = 60 * 60; // 1 hour
@@ -34,8 +34,9 @@ export const generateZegoToken = (
   const payloadString = JSON.stringify(payload);
   const payloadBase64 = Buffer.from(payloadString).toString("base64");
 
+  // HMAC-SHA256 signature using AppSign as the secret
   const signature = crypto
-    .createHmac("sha256", serverSecret)
+    .createHmac("sha256", appSign)
     .update(payloadBase64)
     .digest("hex");
 
