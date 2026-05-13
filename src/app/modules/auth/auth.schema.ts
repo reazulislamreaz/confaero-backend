@@ -3,7 +3,7 @@ import { TAccount } from "./auth.interface";
 
 const authSchema = new Schema<TAccount>(
   {
-    email: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     lastPasswordChange: { type: Date },
     isDeleted: { type: Boolean, default: false },

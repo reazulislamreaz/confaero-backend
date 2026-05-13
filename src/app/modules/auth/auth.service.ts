@@ -70,18 +70,25 @@ const register_user_into_db = async (payload: TRegisterPayload) => {
       session,
     });
 
-    // 2️ User profile create
-    await UserProfile_Model.create({
-      accountId: newAccount[0]._id,
-      name: payload.name,
-    });
+    if (!newAccount.length) {
+      throw new AppError("Failed to create account", httpStatus.BAD_REQUEST);
+    }
 
-    // 6. COMMIT (VERY IMPORTANT)
-    await session.commitTransaction();
+    // 2️ User profile create
+    await UserProfile_Model.create(
+      [
+        {
+          accountId: newAccount[0]._id,
+          name: payload.name,
+        },
+      ],
+      { session },
+    );
 
     // 7. Send Verification Email
     await sendMail({
       to: payload.email,
+      name: payload.name,
       subject: "Account Verification Code",
       textBody: `Account verification code is successfully created on ${new Date().toLocaleDateString()}`,
       htmlBody: `
@@ -99,6 +106,9 @@ const register_user_into_db = async (payload: TRegisterPayload) => {
             <p>If you did not create this account, please ignore this email.</p>
             `,
     });
+
+    // 6. COMMIT (VERY IMPORTANT)
+    await session.commitTransaction();
 
     const userObj = newAccount[0].toObject();
     userObj.password = "";
