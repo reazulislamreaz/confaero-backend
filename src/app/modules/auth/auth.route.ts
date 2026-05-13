@@ -4,6 +4,7 @@ import RequestValidator from "../../middlewares/request_validator";
 import { auth_validation } from "./auth.validation";
 import auth from "../../middlewares/auth";
 
+// changes zegocloud app id and app sign for personal use
 const authRoute = Router();
 
 authRoute.post(
