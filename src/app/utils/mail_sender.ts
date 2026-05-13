@@ -26,16 +26,26 @@ const transporter = nodemailer.createTransport({
     user: configs.email.app_email!,
     pass: configs.email.app_password!,
   },
+  pool: true,
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("SMTP Connection Error:", error);
+  } else {
+    console.log("SMTP Server is ready to take our messages");
+  }
 });
 
 //  Email Sender Function
 const sendMail = async (payload: TMailContent) => {
-  const info = await transporter.sendMail({
-    from: configs.email.app_email,
-    to: payload.to,
-    subject: payload.subject,
-    text: payload.textBody,
-    html: `
+  try {
+    const info = await transporter.sendMail({
+      from: configs.email.app_email,
+      to: payload.to,
+      subject: payload.subject,
+      text: payload.textBody,
+      html: `
         <!DOCTYPE html>
 <html lang="en">
 
@@ -105,8 +115,12 @@ const sendMail = async (payload: TMailContent) => {
 </html>
         
         `,
-  });
-  return info;
+    });
+    return info;
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw error;
+  }
 };
 
 export default sendMail;
