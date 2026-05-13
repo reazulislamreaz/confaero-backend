@@ -15,7 +15,7 @@ export const generateZegoToken = (
     throw new Error("Zego credentials missing (AppID or AppSign)");
   }
 
-  const effectiveTimeInSeconds = 60 * 60; // 1 hour
+  const effectiveTimeInSeconds = 3 * 60 * 60; // 3 hours
   const payload = {
     app_id: appId,
     user_id: userId,
