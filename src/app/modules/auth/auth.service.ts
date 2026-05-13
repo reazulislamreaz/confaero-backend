@@ -129,6 +129,13 @@ const login_user_from_db = async (payload: TLoginPayload) => {
   // check account info
   const isExistAccount = await isAccountExist(payload?.email);
 
+  if (!isExistAccount.isVerified) {
+    throw new AppError(
+      "Your account is not verified. Please verify your email to login.",
+      httpStatus.UNAUTHORIZED,
+    );
+  }
+
   const isPasswordMatch = await bcrypt.compare(
     payload.password,
     isExistAccount.password,
