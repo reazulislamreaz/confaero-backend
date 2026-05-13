@@ -8,25 +8,25 @@ type TMailContent = {
   name?: string;
 };
 
-const transporter = nodemailer.createTransport({
-  //   host: "smtp.gmail.com",
-  host: "mail.betopiagroup.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: configs.email.app_email!,
-    pass: configs.email.app_password!,
-  },
-});
 // const transporter = nodemailer.createTransport({
-//   host: "smtp.gmail.com",
-//   port: 465,
-//   secure: true, // true for 465, false for other ports
+//   //   host: "smtp.gmail.com",
+//   host: "mail.betopiagroup.com",
+//   port: 587,
+//   secure: false, // true for 465, false for other ports
 //   auth: {
 //     user: configs.email.app_email!,
 //     pass: configs.email.app_password!,
 //   },
 // });
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: configs.email.app_email!,
+    pass: configs.email.app_password!,
+  },
+});
 
 //  Email Sender Function
 const sendMail = async (payload: TMailContent) => {
