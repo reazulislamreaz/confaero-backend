@@ -4,7 +4,13 @@ import { TAccount } from "./auth.interface";
 const authSchema = new Schema<TAccount>(
   {
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
+    firebaseUid: { type: String, sparse: true, unique: true },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
     lastPasswordChange: { type: Date },
     isDeleted: { type: Boolean, default: false },
     accountStatus: { type: String, default: "ACTIVE" },

@@ -12,7 +12,7 @@ async function main() {
   const server = http.createServer(app);
   //  init socket
   initSocket(server);
-  
+
   // start background cron jobs
   startCronJobs();
 
@@ -22,7 +22,8 @@ async function main() {
   // });
   // server.listen(configs.port, configs.ip.backend_ip as any, () => {
 
-  server.listen(configs.port, configs.ip.backend_ip as any, () => {
+  // server.listen(configs.port, configs.ip.backend_ip as any, () => {
+  server.listen(configs.port, () => {
     console.log(`Server listening on port ${configs.port}`);
   });
 }

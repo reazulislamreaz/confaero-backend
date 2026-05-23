@@ -16,6 +16,11 @@ authRoute.post(
   RequestValidator(auth_validation.login_validation),
   auth_controllers.login_user,
 );
+authRoute.post(
+  "/google",
+  RequestValidator(auth_validation.googleSignIn),
+  auth_controllers.google_signin,
+);
 
 authRoute.get(
   "/me",

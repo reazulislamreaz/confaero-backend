@@ -1,4 +1,3 @@
-import path from "path";
 import { configs } from "./app/configs";
 import { authSwaggerDocs } from "./app/modules/auth/auth.swagger";
 import { userSwaggerDocs } from "./app/modules/user/user.swagger";
@@ -76,12 +75,9 @@ export const swaggerOptions = {
     },
     servers:
       configs.env === "production"
-        ? [
-            { url: "http://10.10.11.30:8080" },
-            { url: "https://reazul8078.suplify.life" },
-          ]
+        ? [{ url: "http://10.10.11.30:8080" }, { url: "http://localhost:8080" }]
         : [
-            { url: "https://reazul8078.suplify.life" },
+            { url: "http://localhost:8080" },
             { url: "http://10.10.11.30:8080" },
           ],
     components: {

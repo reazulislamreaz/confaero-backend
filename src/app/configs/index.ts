@@ -42,6 +42,20 @@ export const configs = {
   api: {
     google_map_api: process.env.GOOGLE_MAPS_API_KEY,
   },
+  firebase: {
+    service_account_path: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    web: {
+      api_key: process.env.FIREBASE_WEB_API_KEY,
+      auth_domain: process.env.FIREBASE_AUTH_DOMAIN,
+      storage_bucket: process.env.FIREBASE_STORAGE_BUCKET,
+      messaging_sender_id: process.env.FIREBASE_MESSAGING_SENDER_ID,
+      app_id: process.env.FIREBASE_APP_ID,
+      measurement_id: process.env.FIREBASE_MEASUREMENT_ID,
+    },
+  },
   ip: {
     backend_ip: process.env.BACKEND_IP,
   },

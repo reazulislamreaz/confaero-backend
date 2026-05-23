@@ -116,6 +116,82 @@ export const authSwaggerDocs = {
     },
   },
 
+  "/api/v1/auth/google": {
+    post: {
+      tags: ["Auth"],
+      summary: "Sign up or sign in with Google",
+      description:
+        "Authenticate using a Firebase ID token from the client (user.getIdToken() after Google sign-in). **Do not** paste the Firebase service-account private_key here.\n\n**Swagger testing:** open `/dev/google-token` in the browser, sign in with Google, copy the idToken, then paste it below.\n\nCreates a new account + profile if the email is new, or signs in an existing user. Returns access/refresh tokens (refresh token also set in httpOnly cookie).",
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["idToken"],
+              properties: {
+                idToken: {
+                  type: "string",
+                  description:
+                    "JWT with three dot-separated parts (RS256). From user.getIdToken() — NOT private_key, NOT /login accessToken.",
+                  example:
+                    "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyMzQ1NiJ9.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vY29uZmFlcm8tZGMyODQifQ.example",
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "Signed in with Google successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  message: {
+                    type: "string",
+                    example: "Signed in with Google successfully",
+                  },
+                  data: {
+                    type: "object",
+                    properties: {
+                      accessToken: {
+                        type: "string",
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                      },
+                      refreshToken: {
+                        type: "string",
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                      },
+                      activeRole: {
+                        type: "string",
+                        example: "ATTENDEE",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        400: {
+          description: "Google account did not provide an email address",
+        },
+        401: {
+          description: "Invalid or expired Firebase ID token",
+        },
+        409: {
+          description:
+            "Email is already linked to a different Google account",
+        },
+        500: { description: "Internal server error" },
+      },
+    },
+  },
+
   "/api/v1/auth/me": {
     get: {
       tags: ["Auth"],

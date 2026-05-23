@@ -1,21 +1,21 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
-import swaggerJSDoc from "swagger-jsdoc";
 import bodyParser from "body-parser";
-import swaggerUi from "swagger-ui-express";
 import globalErrorHandler from "./app/middlewares/global_error_handler";
 import notFound from "./app/middlewares/not_found_api";
 import appRouter from "./routes";
-import { swaggerOptions } from "./swaggerOptions";
+import { setupSwagger } from "./app/utils/swaggerSetup";
+import { setupGoogleTokenDevHelper } from "./app/utils/googleTokenDevHelper";
 import { upload } from "./app/middlewares/upload";
 import { uploadToS3 } from "./app/utils/s3";
 import { stripeWebhookController } from "./app/utils/stripe.webhook";
+import "./app/utils/firebaseAdmin";
 
 // define app
 const app = express();
-const swaggerSpec = swaggerJSDoc(swaggerOptions);
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+setupSwagger(app);
+setupGoogleTokenDevHelper(app);
 
 // middleware
 app.use(

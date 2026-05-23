@@ -10,9 +10,13 @@ export type Role =
   | "ABSTRACT_REVIEWER"
   | "TRACK_CHAIR";
 
+export type AuthProvider = "local" | "google";
+
 export type TAccount = {
   email: string;
-  password: string;
+  password?: string;
+  firebaseUid?: string;
+  authProvider?: AuthProvider;
   lastPasswordChange?: Date;
   isDeleted?: boolean;
   accountStatus?: "ACTIVE" | "INACTIVE" | "SUSPENDED";

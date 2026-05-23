@@ -38,7 +38,11 @@ const verified_account = z.object({
 });
 
 const deleteAccount = z.object({
-  currentPassword: z.string().min(6),
+  currentPassword: z.string().min(6).optional(),
+});
+
+const googleSignIn = z.object({
+  idToken: z.string().min(1, "Firebase ID token is required"),
 });
 
 const changeRole = z.object({
@@ -57,6 +61,7 @@ const changeRole = z.object({
 export const auth_validation = {
   register_validation,
   login_validation,
+  googleSignIn,
   changePassword,
   forgotPassword,
   verifyResetCode,

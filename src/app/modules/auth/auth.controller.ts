@@ -29,6 +29,22 @@ const login_user = catchAsync(async (req, res) => {
   });
 });
 
+const google_signin = catchAsync(async (req, res) => {
+  const result = await auth_services.google_signin_from_db(req.body.idToken);
+
+  res.cookie("refreshToken", result.refreshToken, {
+    secure: configs.env == "production",
+    httpOnly: true,
+  });
+
+  manageResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Signed in with Google successfully",
+    data: result,
+  });
+});
+
 const get_my_profile = catchAsync(async (req, res) => {
   const { email } = req.user!;
   const result = await auth_services.get_my_profile_from_db(email);
@@ -182,6 +198,7 @@ const change_notification = catchAsync(async (req, res) => {
 export const auth_controllers = {
   register_user,
   login_user,
+  google_signin,
   get_my_profile,
   refresh_token,
   change_password,

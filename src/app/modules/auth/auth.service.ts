@@ -1,5 +1,10 @@
 import { AppError } from "../../utils/app_error";
-import { TAccount, TLoginPayload, TRegisterPayload } from "./auth.interface";
+import {
+  AuthProvider,
+  TAccount,
+  TLoginPayload,
+  TRegisterPayload,
+} from "./auth.interface";
 import { Account_Model } from "./auth.schema";
 import httpStatus from "http-status";
 import bcrypt from "bcrypt";
@@ -11,7 +16,41 @@ import { JwtPayload, Secret } from "jsonwebtoken";
 import sendMail from "../../utils/mail_sender";
 import { isAccountExist } from "../../utils/isAccountExist";
 import { UserProfile_Model } from "../user/user.schema";
-// import admin from "../../utils/firebaseAdmin";
+import admin from "../../utils/firebaseAdmin";
+import {
+  mapFirebaseAuthError,
+  sanitizeFirebaseIdToken,
+} from "../../utils/firebaseToken";
+
+const issueAuthTokens = (account: {
+  email: string;
+  _id: unknown;
+  activeRole?: string;
+}) => {
+  const tokenPayload = {
+    email: account.email,
+    id: String(account._id),
+    activeRole: account.activeRole,
+  };
+
+  const accessToken = jwtHelpers.generateToken(
+    tokenPayload,
+    configs.jwt.access_token as Secret,
+    configs.jwt.access_expires as string,
+  );
+
+  const refreshToken = jwtHelpers.generateToken(
+    tokenPayload,
+    configs.jwt.refresh_token as Secret,
+    configs.jwt.refresh_expires as string,
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+    activeRole: account.activeRole,
+  };
+};
 
 // register user
 const register_user_into_db = async (payload: TRegisterPayload) => {
@@ -38,6 +77,12 @@ const register_user_into_db = async (payload: TRegisterPayload) => {
     );
 
     if (isExistAccount) {
+      if (isExistAccount.authProvider === "google") {
+        throw new AppError(
+          "Account exists with Google. Please sign in with Google.",
+          httpStatus.BAD_REQUEST,
+        );
+      }
       throw new AppError("Account already exist!!", httpStatus.BAD_REQUEST);
     }
 
@@ -60,6 +105,7 @@ const register_user_into_db = async (payload: TRegisterPayload) => {
     const accountPayload: TAccount = {
       email: payload.email,
       password: hashPassword,
+      authProvider: "local",
       lastPasswordChange: new Date(),
       emailNotificationOn: true,
       verificationCode,
@@ -126,15 +172,21 @@ const register_user_into_db = async (payload: TRegisterPayload) => {
 
 // login user
 const login_user_from_db = async (payload: TLoginPayload) => {
-  // check account info
   const isExistAccount = await isAccountExist(payload?.email);
 
-  // if (!isExistAccount.isVerified) {
-  //   throw new AppError(
-  //     "Your account is not verified. Please verify your email to login.",
-  //     httpStatus.UNAUTHORIZED,
-  //   );
-  // }
+  if (isExistAccount.authProvider === "google" && !isExistAccount.password) {
+    throw new AppError(
+      "This account uses Google sign-in. Please continue with Google.",
+      httpStatus.UNAUTHORIZED,
+    );
+  }
+
+  if (!isExistAccount.password) {
+    throw new AppError(
+      "Password login is not available for this account.",
+      httpStatus.UNAUTHORIZED,
+    );
+  }
 
   const isPasswordMatch = await bcrypt.compare(
     payload.password,
@@ -143,31 +195,123 @@ const login_user_from_db = async (payload: TLoginPayload) => {
   if (!isPasswordMatch) {
     throw new AppError("Invalid password", httpStatus.UNAUTHORIZED);
   }
-  const accessToken = jwtHelpers.generateToken(
-    {
-      email: isExistAccount.email,
-      id: isExistAccount._id,
-      activeRole: isExistAccount.activeRole,
-    },
-    configs.jwt.access_token as Secret,
-    configs.jwt.access_expires as string,
-  );
 
-  const refreshToken = jwtHelpers.generateToken(
-    {
-      email: isExistAccount.email,
-      id: isExistAccount._id,
-      activeRole: isExistAccount.activeRole,
-    },
-    configs.jwt.refresh_token as Secret,
-    configs.jwt.refresh_expires as string,
-  );
-  console.log(refreshToken);
-  return {
-    accessToken: accessToken,
-    refreshToken: refreshToken,
-    activeRole: isExistAccount.activeRole,
-  };
+  return issueAuthTokens(isExistAccount);
+};
+
+const google_signin_from_db = async (idToken: string) => {
+  const token = sanitizeFirebaseIdToken(idToken);
+
+  let decodedToken;
+  try {
+    decodedToken = await admin.auth().verifyIdToken(token, true);
+  } catch (error) {
+    if (configs.env === "development") {
+      console.error(
+        "[Firebase] verifyIdToken failed:",
+        (error as { code?: string })?.code,
+        (error as Error)?.message,
+      );
+    }
+    throw mapFirebaseAuthError(error);
+  }
+
+  const { uid, email, name, picture } = decodedToken;
+
+  if (!email) {
+    throw new AppError(
+      "Google account did not provide an email address",
+      httpStatus.BAD_REQUEST,
+    );
+  }
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    let account = await Account_Model.findOne({ email }, null, { session });
+
+    if (!account) {
+      const [newAccount] = await Account_Model.create(
+        [
+          {
+            email,
+            firebaseUid: uid,
+            authProvider: "google" as AuthProvider,
+            isVerified: true,
+            emailNotificationOn: true,
+          },
+        ],
+        { session },
+      );
+
+      await UserProfile_Model.create(
+        [
+          {
+            accountId: newAccount._id,
+            name: name ?? email.split("@")[0],
+            avatar: picture,
+          },
+        ],
+        { session },
+      );
+
+      account = newAccount;
+    } else {
+      if (account.firebaseUid && account.firebaseUid !== uid) {
+        throw new AppError(
+          "This email is linked to a different Google account",
+          httpStatus.CONFLICT,
+        );
+      }
+
+      if (!account.firebaseUid) {
+        account.firebaseUid = uid;
+      }
+
+      if (!account.isVerified) {
+        account.isVerified = true;
+        account.verificationCode = undefined;
+        account.verificationExpire = undefined;
+      }
+
+      await account.save({ session });
+
+      const profile = await UserProfile_Model.findOne(
+        { accountId: account._id },
+        null,
+        { session },
+      );
+
+      if (!profile) {
+        await UserProfile_Model.create(
+          [
+            {
+              accountId: account._id,
+              name: name ?? email.split("@")[0],
+              avatar: picture,
+            },
+          ],
+          { session },
+        );
+      } else if (picture && !profile.avatar) {
+        profile.avatar = picture;
+        await profile.save({ session });
+      }
+    }
+
+    await session.commitTransaction();
+
+    return issueAuthTokens(account);
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 const get_my_profile_from_db = async (email: string) => {
@@ -220,6 +364,20 @@ const change_password_from_db = async (
   },
 ) => {
   const isExistAccount = await isAccountExist(user?.email);
+
+  if (isExistAccount.authProvider === "google" && !isExistAccount.password) {
+    throw new AppError(
+      "Google accounts cannot change password here. Use Google account settings.",
+      httpStatus.BAD_REQUEST,
+    );
+  }
+
+  if (!isExistAccount.password) {
+    throw new AppError(
+      "Password change is not available for this account.",
+      httpStatus.BAD_REQUEST,
+    );
+  }
 
   const isCorrectPassword: boolean = await bcrypt.compare(
     payload.oldPassword,
@@ -468,7 +626,7 @@ const get_new_verification_link_from_db = async (email: string) => {
 // DELETE ACCOUNT
 const delete_account_from_db = async (
   user: JwtPayloadType,
-  currentPassword: string,
+  currentPassword?: string,
 ) => {
   const account = await Account_Model.findOne({
     email: user.email,
@@ -477,16 +635,35 @@ const delete_account_from_db = async (
     throw new AppError("Account not found", httpStatus.NOT_FOUND);
   }
 
-  const isPasswordMatch = await bcrypt.compare(
-    currentPassword,
-    account.password,
-  );
+  const isGoogleOnly =
+    account.authProvider === "google" && !account.password;
 
-  if (!isPasswordMatch) {
-    throw new AppError(
-      "Current password is incorrect",
-      httpStatus.UNAUTHORIZED,
+  if (!isGoogleOnly) {
+    if (!currentPassword) {
+      throw new AppError(
+        "Current password is required",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!account.password) {
+      throw new AppError(
+        "Password verification is not available for this account.",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+
+    const isPasswordMatch = await bcrypt.compare(
+      currentPassword,
+      account.password,
     );
+
+    if (!isPasswordMatch) {
+      throw new AppError(
+        "Current password is incorrect",
+        httpStatus.UNAUTHORIZED,
+      );
+    }
   }
 
   await UserProfile_Model.findOneAndDelete({ accountId: account._id });
@@ -560,6 +737,7 @@ const change_notification_from_db = async (
 export const auth_services = {
   register_user_into_db,
   login_user_from_db,
+  google_signin_from_db,
   get_my_profile_from_db,
   refresh_token_from_db,
   change_password_from_db,
