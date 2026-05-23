@@ -10,8 +10,6 @@ import { setupGoogleTokenDevHelper } from "./app/utils/googleTokenDevHelper";
 import { upload } from "./app/middlewares/upload";
 import { uploadToS3 } from "./app/utils/s3";
 import { stripeWebhookController } from "./app/utils/stripe.webhook";
-import "./app/utils/firebaseAdmin";
-
 // define app
 const app = express();
 setupSwagger(app);

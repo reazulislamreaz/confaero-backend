@@ -18,8 +18,16 @@ const normalizePrivateKey = (key?: string): string | undefined => {
   return value.replace(/\\n/g, "\n");
 };
 
-const initFirebaseAdmin = () => {
-  if (admin.apps.length) return;
+let initAttempted = false;
+
+/** Lazy init so email/password auth still works if Firebase is misconfigured. */
+export const getFirebaseAdmin = () => {
+  if (admin.apps.length) return admin;
+
+  if (initAttempted) {
+    throw new Error("Firebase Admin is not initialized. Check server credentials.");
+  }
+  initAttempted = true;
 
   const serviceAccountPath = configs.firebase.service_account_path;
 
@@ -36,7 +44,7 @@ const initFirebaseAdmin = () => {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
-      return;
+      return admin;
     }
   }
 
@@ -59,8 +67,8 @@ const initFirebaseAdmin = () => {
       privateKey,
     }),
   });
-};
 
-initFirebaseAdmin();
+  return admin;
+};
 
 export default admin;

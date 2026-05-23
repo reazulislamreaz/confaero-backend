@@ -16,7 +16,7 @@ import { JwtPayload, Secret } from "jsonwebtoken";
 import sendMail from "../../utils/mail_sender";
 import { isAccountExist } from "../../utils/isAccountExist";
 import { UserProfile_Model } from "../user/user.schema";
-import admin from "../../utils/firebaseAdmin";
+import { getFirebaseAdmin } from "../../utils/firebaseAdmin";
 import {
   mapFirebaseAuthError,
   sanitizeFirebaseIdToken,
@@ -204,13 +204,20 @@ const google_signin_from_db = async (idToken: string) => {
 
   let decodedToken;
   try {
-    decodedToken = await admin.auth().verifyIdToken(token, true);
+    decodedToken = await getFirebaseAdmin().auth().verifyIdToken(token, true);
   } catch (error) {
+    const message = (error as Error)?.message ?? "";
+    if (message.includes("Firebase credentials") || message.includes("not initialized")) {
+      throw new AppError(
+        "Google sign-in is not configured on the server.",
+        httpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     if (configs.env === "development") {
       console.error(
         "[Firebase] verifyIdToken failed:",
         (error as { code?: string })?.code,
-        (error as Error)?.message,
+        message,
       );
     }
     throw mapFirebaseAuthError(error);
@@ -341,11 +348,15 @@ const refresh_token_from_db = async (token: string) => {
     isDeleted: false,
   });
 
+  if (!userData) {
+    throw new AppError("Account not found", httpStatus.UNAUTHORIZED);
+  }
+
   const accessToken = jwtHelpers.generateToken(
     {
-      email: userData!.email,
-      id: userData!._id,
-      activeRole: userData!.activeRole,
+      email: userData.email,
+      id: userData._id,
+      activeRole: userData.activeRole,
     },
     configs.jwt.access_token as Secret,
     configs.jwt.access_expires as string,
@@ -412,6 +423,13 @@ const change_password_from_db = async (
 };
 const forget_password_from_db = async (email: string) => {
   const account = await isAccountExist(email);
+
+  if (account.authProvider === "google" && !account.password) {
+    throw new AppError(
+      "This account uses Google sign-in. Reset password is not available.",
+      httpStatus.BAD_REQUEST,
+    );
+  }
 
   // If existing OTP still valid
   if (
@@ -728,7 +746,7 @@ const change_notification_from_db = async (
   const emailNotificationOn = payload;
 
   const notification = await Account_Model.updateOne(
-    { _id: user },
+    { _id: user.id },
     { emailNotificationOn },
   );
   return notification;
