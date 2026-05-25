@@ -69,7 +69,7 @@ Explore the complete UI/UX design of the project using the Figma link below:
 
 **Confaero** is an enterprise-grade, full-stack conference and event management platform designed to handle complex, multi-stakeholder events ranging from academic conferences to corporate exhibitions. The system orchestrates the entire event lifecycle—from creation and registration to real-time engagement and post-event analytics.
 
-Built with **TypeScript**, **Node.js**, **Express**, and **MongoDB**, the platform supports **10 distinct user roles**, **real-time WebSocket communication**, **payment processing**, **QR-based check-in**, **academic poster review workflows**, **live streaming integration**, and **comprehensive networking features**.
+Built with **TypeScript**, **Node.js**, **Express**, and **MongoDB**, the platform supports **10 distinct user roles**, **JWT + Firebase Google Sign-In** (web & Flutter mobile), **real-time WebSocket communication**, **Stripe payment processing**, **QR-based check-in**, **academic poster review workflows**, **ZegoCloud live streaming**, and **comprehensive networking features**.
 
 ### Problem Solved
 
@@ -89,6 +89,8 @@ Traditional event management systems are fragmented—requiring multiple tools f
 
 ### 🔐 Authentication & Authorization
 - **JWT-based authentication** with access and refresh tokens
+- **Firebase Google Sign-In** — `POST /api/v1/auth/google` verifies Firebase ID tokens (Flutter, web, Play Store / App Store)
+- **Email/password registration** with OTP verification
 - **Multi-role system** - users can hold multiple roles simultaneously
 - **Dynamic role switching** without re-login
 - **Email verification** with OTP-based account activation
@@ -320,8 +322,10 @@ User Switches Role via API → New Access Token with Active Role
 
 ### Authentication & Security
 - **JWT**: jsonwebtoken 9.0+ (Access + Refresh tokens)
+- **Firebase Admin SDK**: Google OAuth token verification (`verifyIdToken`)
+- **Google Sign-In API**: `POST /api/v1/auth/google` for web & Flutter clients
 - **Password Hashing**: bcrypt 6.0+
-- **Cookie Parser**: cookie-parser 1.4+
+- **Cookie Parser**: cookie-parser 1.4+ (httpOnly refresh tokens)
 - **CORS**: cors 2.8+ with configurable origins
 - **UUID**: uuid 8.3+ for unique identifiers
 
@@ -365,7 +369,8 @@ User Switches Role via API → New Access Token with Active Role
 - **http-status**: HTTP status code constants
 - **crypto-randomuuid**: Cryptographically secure UUIDs
 - **csvtojson**: CSV parsing for bulk uploads
-- **Firebase Admin**: (Optional) push notifications
+- **Firebase Admin SDK 13+**: Google Sign-In verification (service account / `secrets/firebase-admin.json`)
+- **node-cron**: Scheduled background jobs (e.g. volunteer task reminders)
 
 ### API Documentation
 - **Swagger**: swagger-jsdoc + swagger-ui-express
@@ -1702,9 +1707,11 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 - **Total Lines of Code**: ~15,000+
 - **API Endpoints**: 250+
 - **Database Models**: 30+
-- **Third-Party Integrations**: 7+
+- **Third-Party Integrations**: 8+ (Stripe, Firebase, AWS S3, ZegoCloud, Google Maps, Socket.io, Nodemailer, Swagger)
 - **User Roles**: 10
 - **Modules**: 31
+- **Auth Methods**: Email/password + Firebase Google Sign-In
+- **Client Platforms**: Web dashboard, Flutter mobile (iOS / Android)
 - **Development Time**: 3+ months
 
 ---
