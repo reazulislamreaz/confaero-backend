@@ -1,5 +1,8 @@
 import { AppError } from "./app_error";
 import httpStatus from "http-status";
+import { configs } from "../configs";
+import { getFirebaseAdmin } from "../config/firebase";
+import type { DecodedIdToken } from "firebase-admin/auth";
 
 const isLikelyPrivateKeyOrSecret = (value: string): boolean => {
   if (/BEGIN\s+(RSA\s+)?PRIVATE\s+KEY/i.test(value)) return true;
@@ -69,6 +72,36 @@ export const sanitizeFirebaseIdToken = (rawToken: string): string => {
   }
 
   return token;
+};
+
+/** Verifies a Firebase ID token (RS256 JWT from client getIdToken()). */
+export const verifyFirebaseIdToken = async (
+  rawToken: string,
+): Promise<DecodedIdToken> => {
+  const token = sanitizeFirebaseIdToken(rawToken);
+
+  try {
+    return await getFirebaseAdmin().auth().verifyIdToken(token, true);
+  } catch (error) {
+    const message = (error as Error)?.message ?? "";
+    if (
+      message.includes("Firebase credentials") ||
+      message.includes("not initialized")
+    ) {
+      throw new AppError(
+        "Firebase authentication is not configured on the server.",
+        httpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+    if (configs.env === "development") {
+      console.error(
+        "[Firebase] verifyIdToken failed:",
+        (error as { code?: string })?.code,
+        message,
+      );
+    }
+    throw mapFirebaseAuthError(error);
+  }
 };
 
 export const mapFirebaseAuthError = (error: unknown): AppError => {

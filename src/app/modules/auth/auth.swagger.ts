@@ -192,6 +192,65 @@ export const authSwaggerDocs = {
     },
   },
 
+  "/api/v1/auth/firebase-login": {
+    post: {
+      tags: ["Auth"],
+      summary: "Sign up or sign in with Firebase",
+      description:
+        "Authenticate using a Firebase ID token from the client (`await user.getIdToken()` after Firebase Auth sign-in on Android/iOS/Web). Creates account + profile if new, or returns existing user. Issues access/refresh JWT tokens (refresh token also in httpOnly cookie). Same flow as `/auth/google`.",
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["idToken"],
+              properties: {
+                idToken: {
+                  type: "string",
+                  description:
+                    "Firebase ID token (RS256 JWT). From user.getIdToken() — not service account keys.",
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "Signed in with Firebase successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  message: {
+                    type: "string",
+                    example: "Signed in with Firebase successfully",
+                  },
+                  data: {
+                    type: "object",
+                    properties: {
+                      accessToken: { type: "string" },
+                      refreshToken: { type: "string" },
+                      activeRole: { type: "string", example: "ATTENDEE" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        400: { description: "Missing email or invalid token format" },
+        401: { description: "Invalid or expired Firebase ID token" },
+        409: {
+          description: "Email linked to a different Firebase account",
+        },
+      },
+    },
+  },
+
   "/api/v1/auth/me": {
     get: {
       tags: ["Auth"],

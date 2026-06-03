@@ -45,6 +45,22 @@ const google_signin = catchAsync(async (req, res) => {
   });
 });
 
+const firebase_login = catchAsync(async (req, res) => {
+  const result = await auth_services.firebase_login_from_db(req.body.idToken);
+
+  res.cookie("refreshToken", result.refreshToken, {
+    secure: configs.env == "production",
+    httpOnly: true,
+  });
+
+  manageResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Signed in with Firebase successfully",
+    data: result,
+  });
+});
+
 const get_my_profile = catchAsync(async (req, res) => {
   const { email } = req.user!;
   const result = await auth_services.get_my_profile_from_db(email);
@@ -199,6 +215,7 @@ export const auth_controllers = {
   register_user,
   login_user,
   google_signin,
+  firebase_login,
   get_my_profile,
   refresh_token,
   change_password,

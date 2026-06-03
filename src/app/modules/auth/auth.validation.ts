@@ -45,6 +45,10 @@ const googleSignIn = z.object({
   idToken: z.string().min(1, "Firebase ID token is required"),
 });
 
+const firebaseLogin = z.object({
+  idToken: z.string().min(1, "Firebase ID token is required"),
+});
+
 const changeRole = z.object({
   role: z.enum([
     "ORGANIZER",
@@ -62,6 +66,7 @@ export const auth_validation = {
   register_validation,
   login_validation,
   googleSignIn,
+  firebaseLogin,
   changePassword,
   forgotPassword,
   verifyResetCode,

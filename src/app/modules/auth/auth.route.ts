@@ -21,6 +21,11 @@ authRoute.post(
   RequestValidator(auth_validation.googleSignIn),
   auth_controllers.google_signin,
 );
+authRoute.post(
+  "/firebase-login",
+  RequestValidator(auth_validation.firebaseLogin),
+  auth_controllers.firebase_login,
+);
 
 authRoute.get(
   "/me",

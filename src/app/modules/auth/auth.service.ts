@@ -16,11 +16,7 @@ import { JwtPayload, Secret } from "jsonwebtoken";
 import sendMail from "../../utils/mail_sender";
 import { isAccountExist } from "../../utils/isAccountExist";
 import { UserProfile_Model } from "../user/user.schema";
-import { getFirebaseAdmin } from "../../utils/firebaseAdmin";
-import {
-  mapFirebaseAuthError,
-  sanitizeFirebaseIdToken,
-} from "../../utils/firebaseToken";
+import { verifyFirebaseIdToken } from "../../utils/firebaseToken";
 
 const issueAuthTokens = (account: {
   email: string;
@@ -199,30 +195,8 @@ const login_user_from_db = async (payload: TLoginPayload) => {
   return issueAuthTokens(isExistAccount);
 };
 
-const google_signin_from_db = async (idToken: string) => {
-  const token = sanitizeFirebaseIdToken(idToken);
-
-  let decodedToken;
-  try {
-    decodedToken = await getFirebaseAdmin().auth().verifyIdToken(token, true);
-  } catch (error) {
-    const message = (error as Error)?.message ?? "";
-    if (message.includes("Firebase credentials") || message.includes("not initialized")) {
-      throw new AppError(
-        "Google sign-in is not configured on the server.",
-        httpStatus.SERVICE_UNAVAILABLE,
-      );
-    }
-    if (configs.env === "development") {
-      console.error(
-        "[Firebase] verifyIdToken failed:",
-        (error as { code?: string })?.code,
-        message,
-      );
-    }
-    throw mapFirebaseAuthError(error);
-  }
-
+const authenticateWithFirebaseIdToken = async (idToken: string) => {
+  const decodedToken = await verifyFirebaseIdToken(idToken);
   const { uid, email, name, picture } = decodedToken;
 
   if (!email) {
@@ -320,6 +294,12 @@ const google_signin_from_db = async (idToken: string) => {
     session.endSession();
   }
 };
+
+const google_signin_from_db = (idToken: string) =>
+  authenticateWithFirebaseIdToken(idToken);
+
+const firebase_login_from_db = (idToken: string) =>
+  authenticateWithFirebaseIdToken(idToken);
 
 const get_my_profile_from_db = async (email: string) => {
   const isExistAccount = await isAccountExist(email);
@@ -756,6 +736,7 @@ export const auth_services = {
   register_user_into_db,
   login_user_from_db,
   google_signin_from_db,
+  firebase_login_from_db,
   get_my_profile_from_db,
   refresh_token_from_db,
   change_password_from_db,
