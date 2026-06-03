@@ -10,7 +10,7 @@ async function main() {
   await mongoose.connect(configs.db_url!);
 
   const server = http.createServer(app);
-  //  init socket
+  //  init socket connection
   initSocket(server);
 
   // start background cron jobs
