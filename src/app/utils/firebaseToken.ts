@@ -86,10 +86,14 @@ export const verifyFirebaseIdToken = async (
     const message = (error as Error)?.message ?? "";
     if (
       message.includes("Firebase credentials") ||
-      message.includes("not initialized")
+      message.includes("not initialized") ||
+      message.includes("Firebase Admin failed") ||
+      message.includes("FIREBASE_SERVICE_ACCOUNT_JSON")
     ) {
+      const hint =
+        configs.env === "development" ? ` ${message}` : "";
       throw new AppError(
-        "Firebase authentication is not configured on the server.",
+        `Firebase authentication is not configured on the server.${hint}`,
         httpStatus.SERVICE_UNAVAILABLE,
       );
     }
