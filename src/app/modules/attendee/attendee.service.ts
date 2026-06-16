@@ -30,7 +30,6 @@ const get_all_upcoming_events_from_db = async () => {
     .sort({ startDate: 1 })
     .lean();
 };
-};
 
 const get_all_events_from_db = async () => {
   return Event_Model.find()
