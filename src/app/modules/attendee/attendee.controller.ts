@@ -15,6 +15,17 @@ const get_all_upcoming_events = catchAsync(async (req, res) => {
   });
 });
 
+});
+
+const get_all_events = catchAsync(async (req, res) => {
+  const result = await attendee_service.get_all_events_from_db();
+  manageResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All events fetched successfully",
+    data: result,
+  });
+});
 
 // real register flow
 const initiate_attendee_registration = catchAsync(async (req, res) => {
@@ -165,6 +176,7 @@ const get_my_unified_events = catchAsync(async (req, res) => {
 
 export const attendee_controller = {
   get_all_upcoming_events,
+  get_all_events,
   get_my_all_events,
   get_my_events,
   get_single_event,

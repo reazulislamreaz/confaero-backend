@@ -20,6 +20,13 @@ attendee_router.get(
   attendee_controller.get_all_upcoming_events,
 );
 
+);
+
+attendee_router.get(
+  "/all-events",
+  auth("ATTENDEE"),
+  attendee_controller.get_all_events,
+);
 
 // real register flow
 attendee_router.post(

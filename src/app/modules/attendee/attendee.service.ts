@@ -30,6 +30,17 @@ const get_all_upcoming_events_from_db = async () => {
     .sort({ startDate: 1 })
     .lean();
 };
+};
+
+const get_all_events_from_db = async () => {
+  return Event_Model.find()
+    .sort({ startDate: -1 })
+    .select(
+      "title location startDate endDate website bannerImageUrl expectedAttendee boothSlot details",
+    )
+    .lean();
+};
+
 const initiate_attendee_registration = async (
   userId: Types.ObjectId,
   userEmail: any,
@@ -464,6 +475,7 @@ const get_my_unified_events_from_db = async (
 
 export const attendee_service = {
   get_all_upcoming_events_from_db,
+  get_all_events_from_db,
   get_my_all_registered_events_from_db,
   get_my_registered_events_from_db,
   get_single_event_from_db,
