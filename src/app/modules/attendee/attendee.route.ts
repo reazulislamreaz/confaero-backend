@@ -20,8 +20,6 @@ attendee_router.get(
   attendee_controller.get_all_upcoming_events,
 );
 
-);
-
 attendee_router.get(
   "/all-events",
   auth("ATTENDEE"),

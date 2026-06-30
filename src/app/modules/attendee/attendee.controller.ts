@@ -14,9 +14,6 @@ const get_all_upcoming_events = catchAsync(async (req, res) => {
     data: result,
   });
 });
-
-});
-
 const get_all_events = catchAsync(async (req, res) => {
   const result = await attendee_service.get_all_events_from_db();
   manageResponse(res, {
