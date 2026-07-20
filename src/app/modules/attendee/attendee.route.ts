@@ -22,7 +22,16 @@ attendee_router.get(
 
 attendee_router.get(
   "/all-events",
-  auth("ATTENDEE"),
+  auth(
+    "ATTENDEE",
+    "SPEAKER",
+    "EXHIBITOR",
+    "STAFF",
+    "SPONSOR",
+    "VOLUNTEER",
+    "ABSTRACT_REVIEWER",
+    "TRACK_CHAIR",
+  ),
   attendee_controller.get_all_events,
 );
 
